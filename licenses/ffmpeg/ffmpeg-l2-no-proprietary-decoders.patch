@@ -1,0 +1,195 @@
+diff --git a/chromium/config/Chrome/win/x64/config_components.asm b/chromium/config/Chrome/win/x64/config_components.asm
+index 6f556e7..a1d06ca 100644
+--- a/chromium/config/Chrome/win/x64/config_components.asm
++++ b/chromium/config/Chrome/win/x64/config_components.asm
+@@ -133,7 +133,7 @@
+ %define CONFIG_H263I_DECODER 0
+ %define CONFIG_H263P_DECODER 0
+ %define CONFIG_H263_V4L2M2M_DECODER 0
+-%define CONFIG_H264_DECODER 1
++%define CONFIG_H264_DECODER 0
+ %define CONFIG_H264_V4L2M2M_DECODER 0
+ %define CONFIG_H264_MEDIACODEC_DECODER 0
+ %define CONFIG_H264_MMAL_DECODER 0
+@@ -342,7 +342,7 @@
+ %define CONFIG_ZEROCODEC_DECODER 0
+ %define CONFIG_ZLIB_DECODER 0
+ %define CONFIG_ZMBV_DECODER 0
+-%define CONFIG_AAC_DECODER 1
++%define CONFIG_AAC_DECODER 0
+ %define CONFIG_AAC_FIXED_DECODER 0
+ %define CONFIG_AAC_LATM_DECODER 0
+ %define CONFIG_AC3_DECODER 0
+@@ -1042,7 +1042,7 @@
+ %define CONFIG_GSM_PARSER 0
+ %define CONFIG_H261_PARSER 0
+ %define CONFIG_H263_PARSER 0
+-%define CONFIG_H264_PARSER 1
++%define CONFIG_H264_PARSER 0
+ %define CONFIG_HEVC_PARSER 0
+ %define CONFIG_HDR_PARSER 0
+ %define CONFIG_IPU_PARSER 0
+diff --git a/chromium/config/Chrome/win/x64/config_components.h b/chromium/config/Chrome/win/x64/config_components.h
+index e05905e..d463b53 100644
+--- a/chromium/config/Chrome/win/x64/config_components.h
++++ b/chromium/config/Chrome/win/x64/config_components.h
+@@ -135,7 +135,7 @@
+ #define CONFIG_H263I_DECODER 0
+ #define CONFIG_H263P_DECODER 0
+ #define CONFIG_H263_V4L2M2M_DECODER 0
+-#define CONFIG_H264_DECODER 1
++#define CONFIG_H264_DECODER 0
+ #define CONFIG_H264_V4L2M2M_DECODER 0
+ #define CONFIG_H264_MEDIACODEC_DECODER 0
+ #define CONFIG_H264_MMAL_DECODER 0
+@@ -344,7 +344,7 @@
+ #define CONFIG_ZEROCODEC_DECODER 0
+ #define CONFIG_ZLIB_DECODER 0
+ #define CONFIG_ZMBV_DECODER 0
+-#define CONFIG_AAC_DECODER 1
++#define CONFIG_AAC_DECODER 0
+ #define CONFIG_AAC_FIXED_DECODER 0
+ #define CONFIG_AAC_LATM_DECODER 0
+ #define CONFIG_AC3_DECODER 0
+@@ -1044,7 +1044,7 @@
+ #define CONFIG_GSM_PARSER 0
+ #define CONFIG_H261_PARSER 0
+ #define CONFIG_H263_PARSER 0
+-#define CONFIG_H264_PARSER 1
++#define CONFIG_H264_PARSER 0
+ #define CONFIG_HEVC_PARSER 0
+ #define CONFIG_HDR_PARSER 0
+ #define CONFIG_IPU_PARSER 0
+diff --git a/chromium/config/Chrome/win/x64/libavcodec/codec_list.c b/chromium/config/Chrome/win/x64/libavcodec/codec_list.c
+index fe5adb0..7d9debf 100644
+--- a/chromium/config/Chrome/win/x64/libavcodec/codec_list.c
++++ b/chromium/config/Chrome/win/x64/libavcodec/codec_list.c
+@@ -1,6 +1,4 @@
+ static const FFCodec * const codec_list[] = {
+-    &ff_h264_decoder,
+-    &ff_aac_decoder,
+     &ff_flac_decoder,
+     &ff_mp3_decoder,
+     &ff_vorbis_decoder,
+diff --git a/chromium/config/Chrome/win/x64/libavcodec/parser_list.c b/chromium/config/Chrome/win/x64/libavcodec/parser_list.c
+index e3684b3..e5475bf 100644
+--- a/chromium/config/Chrome/win/x64/libavcodec/parser_list.c
++++ b/chromium/config/Chrome/win/x64/libavcodec/parser_list.c
+@@ -1,7 +1,6 @@
+ static const FFCodecParser * const parser_list[] = {
+     &ff_aac_parser,
+     &ff_flac_parser,
+-    &ff_h264_parser,
+     &ff_mpegaudio_parser,
+     &ff_opus_parser,
+     &ff_vorbis_parser,
+diff --git a/ffmpeg_generated.gni b/ffmpeg_generated.gni
+index 447e272..1a19b58 100644
+--- a/ffmpeg_generated.gni
++++ b/ffmpeg_generated.gni
+@@ -296,33 +296,12 @@ if (((current_cpu == "arm64" || current_cpu == "arm64e") &&
+     (is_win && ffmpeg_branding == "Chrome") ||
+     (use_linux_config && ffmpeg_branding == "Chrome")) {
+   ffmpeg_c_sources += [
++    # H.264 dekodér i parser odstraněny (L2 — implementaci nedistribuujeme,
++    # dekóduje D3D11/Media Foundation). Stejný tvar jako HEVC, který Chromium
++    # nikdy nenese. Ponechán startcode.c (volá ho utils.c) a videodsp/fpel,
++    # které H.264-specifické nejsou. Viz docs/PLAN_KODEKY_L2.md K8.
+     "libavcodec/atsc_a53.c",
+     "libavcodec/autorename_libavcodec_videodsp.c",
+-    "libavcodec/cabac.c",
+-    "libavcodec/h2645_parse.c",
+-    "libavcodec/h2645_sei.c",
+-    "libavcodec/h2645_vui.c",
+-    "libavcodec/h2645data.c",
+-    "libavcodec/h264_cabac.c",
+-    "libavcodec/h264_cavlc.c",
+-    "libavcodec/h264_direct.c",
+-    "libavcodec/h264_loopfilter.c",
+-    "libavcodec/h264_mb.c",
+-    "libavcodec/h264_parse.c",
+-    "libavcodec/h264_parser.c",
+-    "libavcodec/h264_picture.c",
+-    "libavcodec/h264_ps.c",
+-    "libavcodec/h264_refs.c",
+-    "libavcodec/h264_sei.c",
+-    "libavcodec/h264_slice.c",
+-    "libavcodec/h264chroma.c",
+-    "libavcodec/h264data.c",
+-    "libavcodec/h264dec.c",
+-    "libavcodec/h264dsp.c",
+-    "libavcodec/h264idct.c",
+-    "libavcodec/h264pred.c",
+-    "libavcodec/h264qpel.c",
+-    "libavcodec/h274.c",
+     "libavcodec/startcode.c",
+   ]
+ }
+@@ -331,32 +310,13 @@ if ((current_cpu == "x64" && ffmpeg_branding == "Chrome") ||
+     (is_win && current_cpu == "x86" && ffmpeg_branding == "Chrome") ||
+     (use_linux_config && current_cpu == "x86" && ffmpeg_branding == "Chrome")) {
+   ffmpeg_c_sources += [
+-    "libavcodec/x86/autorename_libavcodec_x86_aacpsdsp_init.c",
+-    "libavcodec/x86/autorename_libavcodec_x86_h264dsp_init.c",
+-    "libavcodec/x86/autorename_libavcodec_x86_sbrdsp_init.c",
++    # aacpsdsp_init / sbrdsp_init odstraněny s AAC dekodérem (viz níže).
+     "libavcodec/x86/autorename_libavcodec_x86_videodsp_init.c",
+-    "libavcodec/x86/h264_intrapred_init.c",
+-    "libavcodec/x86/h264_qpel.c",
+-    "libavcodec/x86/h264chroma_init.c",
+   ]
+   ffmpeg_asm_sources += [
+-    "libavcodec/x86/aacpsdsp.asm",
+-    "libavcodec/x86/autorename_libavcodec_x86_sbrdsp.asm",
++    # aacpsdsp.asm / sbrdsp.asm odstraněny s AAC dekodérem.
+     "libavcodec/x86/autorename_libavcodec_x86_videodsp.asm",
+     "libavcodec/x86/fpel.asm",
+-    "libavcodec/x86/h264_chromamc.asm",
+-    "libavcodec/x86/h264_chromamc_10bit.asm",
+-    "libavcodec/x86/h264_deblock.asm",
+-    "libavcodec/x86/h264_deblock_10bit.asm",
+-    "libavcodec/x86/h264_idct.asm",
+-    "libavcodec/x86/h264_idct_10bit.asm",
+-    "libavcodec/x86/h264_intrapred.asm",
+-    "libavcodec/x86/h264_intrapred_10bit.asm",
+-    "libavcodec/x86/h264_qpel_10bit.asm",
+-    "libavcodec/x86/h264_qpel_8bit.asm",
+-    "libavcodec/x86/h264_weight.asm",
+-    "libavcodec/x86/h264_weight_10bit.asm",
+-    "libavcodec/x86/qpel.asm",
+   ]
+ }
+ 
+@@ -370,25 +330,17 @@ if (((current_cpu == "arm64" || current_cpu == "arm64e") &&
+     (is_win && ffmpeg_branding == "Chrome") ||
+     (use_linux_config && ffmpeg_branding == "Chrome")) {
+   ffmpeg_c_sources += [
+-    "libavcodec/aac/aacdec.c",
+-    "libavcodec/aac/aacdec_ac.c",
+-    "libavcodec/aac/aacdec_float.c",
+-    "libavcodec/aac/aacdec_lpd.c",
+-    "libavcodec/aac/aacdec_tab.c",
+-    "libavcodec/aac/aacdec_usac.c",
+-    "libavcodec/aac/aacdec_usac_mps212.c",
++    # L2 (docs/D1_AVC_AAC_ROZHODNUTI.md): AAC dekodér se nekompiluje — AAC
++    # dekóduje Media Foundation. Odstraněno oproti autogenerovanému configu:
++    #   aac/aacdec*.c, aacps*.c, aacpsdsp_float.c, aacsbr.c, aactab.c,
++    #   cbrt_data.c, cbrt_tablegen_common.c, sbrdsp.c
++    # Zůstává aac_ac3_parser.c + aac_parser.c + adts_header.c (CONFIG_AAC_PARSER
++    # a CONFIG_AAC_DEMUXER jsou dál 1 — demuxovat AAC musíme), a kbdwin.c
++    # + sinewin.c, což jsou generické okenní funkce sdílené s dalšími kodeky.
+     "libavcodec/aac_ac3_parser.c",
+     "libavcodec/aac_parser.c",
+-    "libavcodec/aacps_common.c",
+-    "libavcodec/aacps_float.c",
+-    "libavcodec/aacpsdsp_float.c",
+-    "libavcodec/aacsbr.c",
+-    "libavcodec/aactab.c",
+     "libavcodec/adts_header.c",
+-    "libavcodec/cbrt_data.c",
+-    "libavcodec/cbrt_tablegen_common.c",
+     "libavcodec/kbdwin.c",
+-    "libavcodec/sbrdsp.c",
+     "libavcodec/sinewin.c",
+     "libavformat/apetag.c",
+     "libavformat/autorename_libavformat_aacdec.c",

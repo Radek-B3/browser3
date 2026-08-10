@@ -1,0 +1,18 @@
+Browser3 Public Layer
+Copyright 2026 Radek Cisar
+
+This product includes a public Python orchestration and profile-generation layer
+licensed under the Mozilla Public License, Version 2.0.
+
+The Mozilla Public License does not grant rights in the Browser3 name, trademarks,
+service marks, or visual identity, except as necessary to comply with its notice terms.
+
+The GPU catalog at resources/gpu_templates.json contains selected device identifiers
+and names derived from PCI ID Repository snapshot 2026.07.21, copyright Martin Mares
+and Albert Pool, used under BSD-3-Clause. The complete license is provided at
+licenses/pci-ids/LICENSE.txt and the attribution is described in
+THIRD_PARTY_NOTICES.md (public source) or THIRD_PARTY_NOTICES.txt (binary package).
+
+The distributed Browser3 binary also contains third-party and proprietary components
+that are outside the scope of this NOTICE. See the applicable Third-Party Notices
+document, source/binary boundary document, and binary EULA supplied with the package.

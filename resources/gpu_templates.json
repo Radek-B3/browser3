@@ -1,0 +1,2258 @@
+{
+  "schema_version": 1,
+  "generated_by": "scripts/build_gpu_templates_public.py",
+  "sources": {
+    "cards": "gpu_profiles/sources/cards.json",
+    "pci_ids_version": "2026.07.21",
+    "dawn_gpu_info": "Chromium third_party/dawn/src/dawn/gpu_info.json",
+    "identity_control": "gpu_profiles/host_rx580.json"
+  },
+  "templates": [
+    {
+      "name": "host-amd-rx580",
+      "note": "Identity control built from Browser3's own measured host capture.",
+      "webgl": {
+        "vendor": "Google Inc. (AMD)",
+        "renderer": "ANGLE (AMD, Radeon RX 580 Series (0x000067DF) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "amd",
+        "architecture": "gcn-4",
+        "subgroup_min_size": 64,
+        "subgroup_max_size": 128
+      }
+    },
+    {
+      "name": "win-amd-rx5500",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x7340, chip Navi 14), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware. RARITY=rare: uncommon, integrated, or old adapter strings may increase tampering scores; run an independent gate before use.",
+      "form_factor": "desktop",
+      "rarity": "rare",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "Radeon RX 5500",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "Navi 14 [Radeon RX 5500/5500M / Pro 5300/5300M/5500M]",
+        "device_id": "0x7340",
+        "chip": "Navi 14",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (AMD)",
+        "renderer": "ANGLE (AMD, AMD Radeon RX 5500 (0x00007340) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "amd",
+        "architecture": "rdna-1",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 64
+      }
+    },
+    {
+      "name": "win-amd-rx5600xt",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x731F, chip Navi 10), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "Radeon RX 5600 XT",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "Navi 10 [Radeon RX 5600 OEM/5600 XT / 5700/5700 XT]",
+        "device_id": "0x731F",
+        "chip": "Navi 10",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (AMD)",
+        "renderer": "ANGLE (AMD, AMD Radeon RX 5600 XT (0x0000731F) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "amd",
+        "architecture": "rdna-1",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 64
+      },
+      "measured_tampering_p1": 0.1412
+    },
+    {
+      "name": "win-amd-rx570",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x67DF, chip Ellesmere), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "Radeon RX 570",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "Ellesmere [Radeon RX 470/480/570/570X/580/580X/590]",
+        "device_id": "0x67DF",
+        "chip": "Ellesmere",
+        "candidates": 2
+      },
+      "webgl": {
+        "vendor": "Google Inc. (AMD)",
+        "renderer": "ANGLE (AMD, Radeon RX 570 Series (0x000067DF) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "amd",
+        "architecture": "gcn-4",
+        "subgroup_min_size": 64,
+        "subgroup_max_size": 128
+      }
+    },
+    {
+      "name": "win-amd-rx5700",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x731F, chip Navi 10), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "Radeon RX 5700",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "Navi 10 [Radeon RX 5600 OEM/5600 XT / 5700/5700 XT]",
+        "device_id": "0x731F",
+        "chip": "Navi 10",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (AMD)",
+        "renderer": "ANGLE (AMD, AMD Radeon RX 5700 (0x0000731F) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "amd",
+        "architecture": "rdna-1",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 64
+      }
+    },
+    {
+      "name": "win-amd-rx5700xt",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x731F, chip Navi 10), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "Radeon RX 5700 XT",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "Navi 10 [Radeon RX 5600 OEM/5600 XT / 5700/5700 XT]",
+        "device_id": "0x731F",
+        "chip": "Navi 10",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (AMD)",
+        "renderer": "ANGLE (AMD, AMD Radeon RX 5700 XT (0x0000731F) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "amd",
+        "architecture": "rdna-1",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 64
+      },
+      "measured_tampering_p1": 0.1474
+    },
+    {
+      "name": "win-amd-rx580",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x67DF, chip Ellesmere), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "measured",
+      "subgroup_verified": true,
+      "source": {
+        "model": "Radeon RX 580",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "Ellesmere [Radeon RX 470/480/570/570X/580/580X/590]",
+        "device_id": "0x67DF",
+        "chip": "Ellesmere",
+        "candidates": 2
+      },
+      "webgl": {
+        "vendor": "Google Inc. (AMD)",
+        "renderer": "ANGLE (AMD, Radeon RX 580 Series (0x000067DF) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "amd",
+        "architecture": "gcn-4",
+        "subgroup_min_size": 64,
+        "subgroup_max_size": 128
+      },
+      "measured_tampering_p1": 0.2254
+    },
+    {
+      "name": "win-amd-rx590",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x67DF, chip Ellesmere), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "Radeon RX 590",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "Ellesmere [Radeon RX 470/480/570/570X/580/580X/590]",
+        "device_id": "0x67DF",
+        "chip": "Ellesmere",
+        "candidates": 2
+      },
+      "webgl": {
+        "vendor": "Google Inc. (AMD)",
+        "renderer": "ANGLE (AMD, Radeon RX 590 Series (0x000067DF) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "amd",
+        "architecture": "gcn-4",
+        "subgroup_min_size": 64,
+        "subgroup_max_size": 128
+      },
+      "measured_tampering_p1": 0.2707
+    },
+    {
+      "name": "win-amd-rx6600",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x73FF, chip Navi 23), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "Radeon RX 6600",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "Navi 23 [Radeon RX 6600/6600 XT/6600M]",
+        "device_id": "0x73FF",
+        "chip": "Navi 23",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (AMD)",
+        "renderer": "ANGLE (AMD, AMD Radeon RX 6600 (0x000073FF) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "amd",
+        "architecture": "rdna-2",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 64
+      },
+      "measured_tampering_p1": 0.0813
+    },
+    {
+      "name": "win-amd-rx6600xt",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x73FF, chip Navi 23), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "Radeon RX 6600 XT",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "Navi 23 [Radeon RX 6600/6600 XT/6600M]",
+        "device_id": "0x73FF",
+        "chip": "Navi 23",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (AMD)",
+        "renderer": "ANGLE (AMD, AMD Radeon RX 6600 XT (0x000073FF) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "amd",
+        "architecture": "rdna-2",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 64
+      },
+      "measured_tampering_p1": 0.1864
+    },
+    {
+      "name": "win-amd-rx6650xt",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x73EF, chip Navi 23), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "Radeon RX 6650 XT",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "Navi 23 [Radeon RX 6650 XT / 6700S / 6800S]",
+        "device_id": "0x73EF",
+        "chip": "Navi 23",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (AMD)",
+        "renderer": "ANGLE (AMD, AMD Radeon RX 6650 XT (0x000073EF) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "amd",
+        "architecture": "rdna-2",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 64
+      }
+    },
+    {
+      "name": "win-amd-rx6700xt",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x73DF, chip Navi 22), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "Radeon RX 6700 XT",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "Navi 22 [Radeon RX 6700/6700 XT/6750 XT / 6800M/6850M XT]",
+        "device_id": "0x73DF",
+        "chip": "Navi 22",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (AMD)",
+        "renderer": "ANGLE (AMD, AMD Radeon RX 6700 XT (0x000073DF) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "amd",
+        "architecture": "rdna-2",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 64
+      },
+      "measured_tampering_p1": 0.0872
+    },
+    {
+      "name": "win-amd-rx6750xt",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x73DF, chip Navi 22), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "Radeon RX 6750 XT",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "Navi 22 [Radeon RX 6700/6700 XT/6750 XT / 6800M/6850M XT]",
+        "device_id": "0x73DF",
+        "chip": "Navi 22",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (AMD)",
+        "renderer": "ANGLE (AMD, AMD Radeon RX 6750 XT (0x000073DF) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "amd",
+        "architecture": "rdna-2",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 64
+      },
+      "measured_tampering_p1": 0.067
+    },
+    {
+      "name": "win-amd-rx6800",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x73BF, chip Navi 21), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "Radeon RX 6800",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "Navi 21 [Radeon RX 6800/6800 XT / 6900 XT]",
+        "device_id": "0x73BF",
+        "chip": "Navi 21",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (AMD)",
+        "renderer": "ANGLE (AMD, AMD Radeon RX 6800 (0x000073BF) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "amd",
+        "architecture": "rdna-2",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 64
+      }
+    },
+    {
+      "name": "win-amd-rx6800xt",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x73BF, chip Navi 21), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "Radeon RX 6800 XT",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "Navi 21 [Radeon RX 6800/6800 XT / 6900 XT]",
+        "device_id": "0x73BF",
+        "chip": "Navi 21",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (AMD)",
+        "renderer": "ANGLE (AMD, AMD Radeon RX 6800 XT (0x000073BF) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "amd",
+        "architecture": "rdna-2",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 64
+      },
+      "measured_tampering_p1": 0.3104
+    },
+    {
+      "name": "win-amd-rx6900xt",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x73AF, chip Navi 21), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "Radeon RX 6900 XT",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "Navi 21 [Radeon RX 6900 XT]",
+        "device_id": "0x73AF",
+        "chip": "Navi 21",
+        "candidates": 2
+      },
+      "webgl": {
+        "vendor": "Google Inc. (AMD)",
+        "renderer": "ANGLE (AMD, AMD Radeon RX 6900 XT (0x000073AF) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "amd",
+        "architecture": "rdna-2",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 64
+      }
+    },
+    {
+      "name": "win-amd-rx6950xt",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x73A5, chip Navi 21), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "Radeon RX 6950 XT",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "Navi 21 [Radeon RX 6950 XT]",
+        "device_id": "0x73A5",
+        "chip": "Navi 21",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (AMD)",
+        "renderer": "ANGLE (AMD, AMD Radeon RX 6950 XT (0x000073A5) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "amd",
+        "architecture": "rdna-2",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 64
+      }
+    },
+    {
+      "name": "win-amd-rx7600",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x7480, chip Navi 33), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "Radeon RX 7600",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "Navi 33 [Radeon RX 7600/7600 XT/7600M XT/7600S/7700S / PRO W7600]",
+        "device_id": "0x7480",
+        "chip": "Navi 33",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (AMD)",
+        "renderer": "ANGLE (AMD, AMD Radeon RX 7600 (0x00007480) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "amd",
+        "architecture": "rdna-3",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 64
+      }
+    },
+    {
+      "name": "win-amd-rx7600xt",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x7480, chip Navi 33), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "Radeon RX 7600 XT",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "Navi 33 [Radeon RX 7600/7600 XT/7600M XT/7600S/7700S / PRO W7600]",
+        "device_id": "0x7480",
+        "chip": "Navi 33",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (AMD)",
+        "renderer": "ANGLE (AMD, AMD Radeon RX 7600 XT (0x00007480) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "amd",
+        "architecture": "rdna-3",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 64
+      },
+      "measured_tampering_p1": 0.1948
+    },
+    {
+      "name": "win-amd-rx7700xt",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x747E, chip Navi 32), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "Radeon RX 7700 XT",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "Navi 32 [Radeon RX 7700 XT / 7800 XT]",
+        "device_id": "0x747E",
+        "chip": "Navi 32",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (AMD)",
+        "renderer": "ANGLE (AMD, AMD Radeon RX 7700 XT (0x0000747E) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "amd",
+        "architecture": "rdna-3",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 64
+      },
+      "measured_tampering_p1": 0.089
+    },
+    {
+      "name": "win-amd-rx7800xt",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x747E, chip Navi 32), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "Radeon RX 7800 XT",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "Navi 32 [Radeon RX 7700 XT / 7800 XT]",
+        "device_id": "0x747E",
+        "chip": "Navi 32",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (AMD)",
+        "renderer": "ANGLE (AMD, AMD Radeon RX 7800 XT (0x0000747E) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "amd",
+        "architecture": "rdna-3",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 64
+      },
+      "measured_tampering_p1": 0.0424
+    },
+    {
+      "name": "win-amd-rx7900gre",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x744C, chip Navi 31), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "Radeon RX 7900 GRE",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "Navi 31 [Radeon RX 7900 XT/7900 XTX/7900 GRE/7900M]",
+        "device_id": "0x744C",
+        "chip": "Navi 31",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (AMD)",
+        "renderer": "ANGLE (AMD, AMD Radeon RX 7900 GRE (0x0000744C) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "amd",
+        "architecture": "rdna-3",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 64
+      }
+    },
+    {
+      "name": "win-amd-rx7900xt",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x744C, chip Navi 31), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "Radeon RX 7900 XT",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "Navi 31 [Radeon RX 7900 XT/7900 XTX/7900 GRE/7900M]",
+        "device_id": "0x744C",
+        "chip": "Navi 31",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (AMD)",
+        "renderer": "ANGLE (AMD, AMD Radeon RX 7900 XT (0x0000744C) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "amd",
+        "architecture": "rdna-3",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 64
+      }
+    },
+    {
+      "name": "win-amd-rx7900xtx",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x744C, chip Navi 31), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "Radeon RX 7900 XTX",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "Navi 31 [Radeon RX 7900 XT/7900 XTX/7900 GRE/7900M]",
+        "device_id": "0x744C",
+        "chip": "Navi 31",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (AMD)",
+        "renderer": "ANGLE (AMD, AMD Radeon RX 7900 XTX (0x0000744C) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "amd",
+        "architecture": "rdna-3",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 64
+      }
+    },
+    {
+      "name": "win-amd-rx9060xt",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x7590, chip Navi 44), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "Radeon RX 9060 XT",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "Navi 44 [Radeon RX 9060 XT]",
+        "device_id": "0x7590",
+        "chip": "Navi 44",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (AMD)",
+        "renderer": "ANGLE (AMD, AMD Radeon RX 9060 XT (0x00007590) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "amd",
+        "architecture": "rdna-4",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 64
+      },
+      "measured_tampering_p1": 0.1957
+    },
+    {
+      "name": "win-amd-rx9070",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x7550, chip Navi 48), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "Radeon RX 9070",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "Navi 48 [Radeon RX 9070/9070 XT/9070 GRE]",
+        "device_id": "0x7550",
+        "chip": "Navi 48",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (AMD)",
+        "renderer": "ANGLE (AMD, AMD Radeon RX 9070 (0x00007550) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "amd",
+        "architecture": "rdna-4",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 64
+      }
+    },
+    {
+      "name": "win-amd-rx9070xt",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x7550, chip Navi 48), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "Radeon RX 9070 XT",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "Navi 48 [Radeon RX 9070/9070 XT/9070 GRE]",
+        "device_id": "0x7550",
+        "chip": "Navi 48",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (AMD)",
+        "renderer": "ANGLE (AMD, AMD Radeon RX 9070 XT (0x00007550) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "amd",
+        "architecture": "rdna-4",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 64
+      }
+    },
+    {
+      "name": "win-intel-arc",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x7D55, chip Meteor Lake-P), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware. WARNING: subgroup size is a typical hardware value rather than a measured adapter dump; validate it before release. RARITY=rare: uncommon, integrated, or old adapter strings may increase tampering scores; run an independent gate before use.",
+      "form_factor": "desktop",
+      "rarity": "rare",
+      "name_confidence": "convention",
+      "subgroup_verified": false,
+      "source": {
+        "model": "Arc Graphics",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "Meteor Lake-P [Intel Arc Graphics]",
+        "device_id": "0x7D55",
+        "chip": "Meteor Lake-P",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (Intel)",
+        "renderer": "ANGLE (Intel, Intel(R) Arc(TM) Graphics (0x00007D55) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "intel",
+        "architecture": "xe-lpg",
+        "subgroup_min_size": 8,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.4916
+    },
+    {
+      "name": "win-intel-hd520",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x1916, chip Skylake-U GT2), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware. WARNING: subgroup size is a typical hardware value rather than a measured adapter dump; validate it before release. RARITY=rare: uncommon, integrated, or old adapter strings may increase tampering scores; run an independent gate before use.",
+      "form_factor": "desktop",
+      "rarity": "rare",
+      "name_confidence": "convention",
+      "subgroup_verified": false,
+      "source": {
+        "model": "HD Graphics 520",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "Skylake-U GT2 [HD Graphics 520]",
+        "device_id": "0x1916",
+        "chip": "Skylake-U GT2",
+        "candidates": 2
+      },
+      "webgl": {
+        "vendor": "Google Inc. (Intel)",
+        "renderer": "ANGLE (Intel, Intel(R) HD Graphics 520 (0x00001916) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "intel",
+        "architecture": "gen-9",
+        "subgroup_min_size": 8,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.3284
+    },
+    {
+      "name": "win-intel-hd530",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x1912, chip Skylake-S GT2), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware. WARNING: subgroup size is a typical hardware value rather than a measured adapter dump; validate it before release. RARITY=rare: uncommon, integrated, or old adapter strings may increase tampering scores; run an independent gate before use.",
+      "form_factor": "desktop",
+      "rarity": "rare",
+      "name_confidence": "convention",
+      "subgroup_verified": false,
+      "source": {
+        "model": "HD Graphics 530",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "Skylake-S GT2 [HD Graphics 530]",
+        "device_id": "0x1912",
+        "chip": "Skylake-S GT2",
+        "candidates": 2
+      },
+      "webgl": {
+        "vendor": "Google Inc. (Intel)",
+        "renderer": "ANGLE (Intel, Intel(R) HD Graphics 530 (0x00001912) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "intel",
+        "architecture": "gen-9",
+        "subgroup_min_size": 8,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.1576
+    },
+    {
+      "name": "win-intel-hd620",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x5916, chip Kaby Lake-U GT2), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware. WARNING: subgroup size is a typical hardware value rather than a measured adapter dump; validate it before release. RARITY=rare: uncommon, integrated, or old adapter strings may increase tampering scores; run an independent gate before use.",
+      "form_factor": "desktop",
+      "rarity": "rare",
+      "name_confidence": "convention",
+      "subgroup_verified": false,
+      "source": {
+        "model": "HD Graphics 620",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "Kaby Lake-U GT2 [HD Graphics 620]",
+        "device_id": "0x5916",
+        "chip": "Kaby Lake-U GT2",
+        "candidates": 2
+      },
+      "webgl": {
+        "vendor": "Google Inc. (Intel)",
+        "renderer": "ANGLE (Intel, Intel(R) HD Graphics 620 (0x00005916) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "intel",
+        "architecture": "gen-9",
+        "subgroup_min_size": 8,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.254
+    },
+    {
+      "name": "win-intel-hd630",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x5912, chip Kaby Lake-S GT2), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware. WARNING: subgroup size is a typical hardware value rather than a measured adapter dump; validate it before release. RARITY=rare: uncommon, integrated, or old adapter strings may increase tampering scores; run an independent gate before use.",
+      "form_factor": "desktop",
+      "rarity": "rare",
+      "name_confidence": "convention",
+      "subgroup_verified": false,
+      "source": {
+        "model": "HD Graphics 630",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "Kaby Lake-S GT2 [HD Graphics 630]",
+        "device_id": "0x5912",
+        "chip": "Kaby Lake-S GT2",
+        "candidates": 2
+      },
+      "webgl": {
+        "vendor": "Google Inc. (Intel)",
+        "renderer": "ANGLE (Intel, Intel(R) HD Graphics 630 (0x00005912) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "intel",
+        "architecture": "gen-9",
+        "subgroup_min_size": 8,
+        "subgroup_max_size": 32
+      }
+    },
+    {
+      "name": "win-intel-irisplus655",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x3EA5, chip CoffeeLake-U GT3e), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware. WARNING: subgroup size is a typical hardware value rather than a measured adapter dump; validate it before release. RARITY=rare: uncommon, integrated, or old adapter strings may increase tampering scores; run an independent gate before use.",
+      "form_factor": "desktop",
+      "rarity": "rare",
+      "name_confidence": "convention",
+      "subgroup_verified": false,
+      "source": {
+        "model": "Iris Plus Graphics 655",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "CoffeeLake-U GT3e [Iris Plus Graphics 655]",
+        "device_id": "0x3EA5",
+        "chip": "CoffeeLake-U GT3e",
+        "candidates": 2
+      },
+      "webgl": {
+        "vendor": "Google Inc. (Intel)",
+        "renderer": "ANGLE (Intel, Intel(R) Iris(R) Plus Graphics 655 (0x00003EA5) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "intel",
+        "architecture": "gen-9",
+        "subgroup_min_size": 8,
+        "subgroup_max_size": 32
+      }
+    },
+    {
+      "name": "win-intel-irisxe",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x46A6, chip Alder Lake-P GT2), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware. WARNING: subgroup size is a typical hardware value rather than a measured adapter dump; validate it before release. RARITY=rare: uncommon, integrated, or old adapter strings may increase tampering scores; run an independent gate before use.",
+      "form_factor": "desktop",
+      "rarity": "rare",
+      "name_confidence": "convention",
+      "subgroup_verified": false,
+      "source": {
+        "model": "Iris Xe Graphics",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "Alder Lake-P GT2 [Iris Xe Graphics]",
+        "device_id": "0x46A6",
+        "chip": "Alder Lake-P GT2",
+        "candidates": 13
+      },
+      "webgl": {
+        "vendor": "Google Inc. (Intel)",
+        "renderer": "ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x000046A6) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "intel",
+        "architecture": "gen-12lp",
+        "subgroup_min_size": 8,
+        "subgroup_max_size": 32
+      }
+    },
+    {
+      "name": "win-intel-uhd610",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x3E90, chip CoffeeLake-S GT1), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware. WARNING: subgroup size is a typical hardware value rather than a measured adapter dump; validate it before release. RARITY=rare: uncommon, integrated, or old adapter strings may increase tampering scores; run an independent gate before use.",
+      "form_factor": "desktop",
+      "rarity": "rare",
+      "name_confidence": "convention",
+      "subgroup_verified": false,
+      "source": {
+        "model": "UHD Graphics 610",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "CoffeeLake-S GT1 [UHD Graphics 610]",
+        "device_id": "0x3E90",
+        "chip": "CoffeeLake-S GT1",
+        "candidates": 6
+      },
+      "webgl": {
+        "vendor": "Google Inc. (Intel)",
+        "renderer": "ANGLE (Intel, Intel(R) UHD Graphics 610 (0x00003E90) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "intel",
+        "architecture": "gen-9",
+        "subgroup_min_size": 8,
+        "subgroup_max_size": 32
+      }
+    },
+    {
+      "name": "win-intel-uhd620",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x3EA0, chip WhiskeyLake-U GT2), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware. WARNING: subgroup size is a typical hardware value rather than a measured adapter dump; validate it before release. RARITY=rare: uncommon, integrated, or old adapter strings may increase tampering scores; run an independent gate before use.",
+      "form_factor": "desktop",
+      "rarity": "rare",
+      "name_confidence": "convention",
+      "subgroup_verified": false,
+      "source": {
+        "model": "UHD Graphics 620",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "WhiskeyLake-U GT2 [UHD Graphics 620]",
+        "device_id": "0x3EA0",
+        "chip": "WhiskeyLake-U GT2",
+        "candidates": 4
+      },
+      "webgl": {
+        "vendor": "Google Inc. (Intel)",
+        "renderer": "ANGLE (Intel, Intel(R) UHD Graphics 620 (0x00003EA0) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "intel",
+        "architecture": "gen-9",
+        "subgroup_min_size": 8,
+        "subgroup_max_size": 32
+      }
+    },
+    {
+      "name": "win-intel-uhd630",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x3E91, chip CoffeeLake-S GT2), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware. WARNING: subgroup size is a typical hardware value rather than a measured adapter dump; validate it before release. RARITY=rare: uncommon, integrated, or old adapter strings may increase tampering scores; run an independent gate before use.",
+      "form_factor": "desktop",
+      "rarity": "rare",
+      "name_confidence": "convention",
+      "subgroup_verified": false,
+      "source": {
+        "model": "UHD Graphics 630",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "CoffeeLake-S GT2 [UHD Graphics 630]",
+        "device_id": "0x3E91",
+        "chip": "CoffeeLake-S GT2",
+        "candidates": 6
+      },
+      "webgl": {
+        "vendor": "Google Inc. (Intel)",
+        "renderer": "ANGLE (Intel, Intel(R) UHD Graphics 630 (0x00003E91) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "intel",
+        "architecture": "gen-9",
+        "subgroup_min_size": 8,
+        "subgroup_max_size": 32
+      }
+    },
+    {
+      "name": "win-intel-uhd730",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x4682, chip Alder Lake-S GT1), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware. WARNING: subgroup size is a typical hardware value rather than a measured adapter dump; validate it before release. RARITY=rare: uncommon, integrated, or old adapter strings may increase tampering scores; run an independent gate before use.",
+      "form_factor": "desktop",
+      "rarity": "rare",
+      "name_confidence": "convention",
+      "subgroup_verified": false,
+      "source": {
+        "model": "UHD Graphics 730",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "Alder Lake-S GT1 [UHD Graphics 730]",
+        "device_id": "0x4682",
+        "chip": "Alder Lake-S GT1",
+        "candidates": 3
+      },
+      "webgl": {
+        "vendor": "Google Inc. (Intel)",
+        "renderer": "ANGLE (Intel, Intel(R) UHD Graphics 730 (0x00004682) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "intel",
+        "architecture": "gen-12lp",
+        "subgroup_min_size": 8,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.3134
+    },
+    {
+      "name": "win-intel-uhd750",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x4C8A, chip RocketLake-S GT1), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware. WARNING: subgroup size is a typical hardware value rather than a measured adapter dump; validate it before release. RARITY=rare: uncommon, integrated, or old adapter strings may increase tampering scores; run an independent gate before use.",
+      "form_factor": "desktop",
+      "rarity": "rare",
+      "name_confidence": "convention",
+      "subgroup_verified": false,
+      "source": {
+        "model": "UHD Graphics 750",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "RocketLake-S GT1 [UHD Graphics 750]",
+        "device_id": "0x4C8A",
+        "chip": "RocketLake-S GT1",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (Intel)",
+        "renderer": "ANGLE (Intel, Intel(R) UHD Graphics 750 (0x00004C8A) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "intel",
+        "architecture": "gen-12lp",
+        "subgroup_min_size": 8,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.2354
+    },
+    {
+      "name": "win-intel-uhd770",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x4680, chip Alder Lake-S GT1), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware. WARNING: subgroup size is a typical hardware value rather than a measured adapter dump; validate it before release. RARITY=rare: uncommon, integrated, or old adapter strings may increase tampering scores; run an independent gate before use.",
+      "form_factor": "desktop",
+      "rarity": "rare",
+      "name_confidence": "convention",
+      "subgroup_verified": false,
+      "source": {
+        "model": "UHD Graphics 770",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "Alder Lake-S GT1 [UHD Graphics 770]",
+        "device_id": "0x4680",
+        "chip": "Alder Lake-S GT1",
+        "candidates": 4
+      },
+      "webgl": {
+        "vendor": "Google Inc. (Intel)",
+        "renderer": "ANGLE (Intel, Intel(R) UHD Graphics 770 (0x00004680) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "intel",
+        "architecture": "gen-12lp",
+        "subgroup_min_size": 8,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.3883
+    },
+    {
+      "name": "win-nvidia-gtx1050",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x1C81, chip GP107), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce GTX 1050",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "GP107 [GeForce GTX 1050]",
+        "device_id": "0x1C81",
+        "chip": "GP107",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce GTX 1050 (0x00001C81) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "pascal",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.4778
+    },
+    {
+      "name": "win-nvidia-gtx1050ti",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x1C82, chip GP107), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce GTX 1050 Ti",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "GP107 [GeForce GTX 1050 Ti]",
+        "device_id": "0x1C82",
+        "chip": "GP107",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce GTX 1050 Ti (0x00001C82) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "pascal",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.2992
+    },
+    {
+      "name": "win-nvidia-gtx1060",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x1C03, chip GP106), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce GTX 1060 6GB",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "GP106 [GeForce GTX 1060 6GB]",
+        "device_id": "0x1C03",
+        "chip": "GP106",
+        "candidates": 3
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce GTX 1060 6GB (0x00001C03) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "pascal",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      }
+    },
+    {
+      "name": "win-nvidia-gtx10603gb",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x1C02, chip GP106), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce GTX 1060 3GB",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "GP106 [GeForce GTX 1060 3GB]",
+        "device_id": "0x1C02",
+        "chip": "GP106",
+        "candidates": 2
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce GTX 1060 3GB (0x00001C02) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "pascal",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.3575
+    },
+    {
+      "name": "win-nvidia-gtx1070",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x1B81, chip GP104), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce GTX 1070",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "GP104 [GeForce GTX 1070]",
+        "device_id": "0x1B81",
+        "chip": "GP104",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce GTX 1070 (0x00001B81) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "pascal",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.1287
+    },
+    {
+      "name": "win-nvidia-gtx1070ti",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x1B82, chip GP104), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce GTX 1070 Ti",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "GP104 [GeForce GTX 1070 Ti]",
+        "device_id": "0x1B82",
+        "chip": "GP104",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce GTX 1070 Ti (0x00001B82) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "pascal",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      }
+    },
+    {
+      "name": "win-nvidia-gtx1080",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x1B80, chip GP104), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce GTX 1080",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "GP104 [GeForce GTX 1080]",
+        "device_id": "0x1B80",
+        "chip": "GP104",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce GTX 1080 (0x00001B80) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "pascal",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.5044
+    },
+    {
+      "name": "win-nvidia-gtx1080ti",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x1B06, chip GP102), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce GTX 1080 Ti",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "GP102 [GeForce GTX 1080 Ti]",
+        "device_id": "0x1B06",
+        "chip": "GP102",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce GTX 1080 Ti (0x00001B06) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "pascal",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      }
+    },
+    {
+      "name": "win-nvidia-gtx1630",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x1F83, chip TU117), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce GTX 1630",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "TU117 [GeForce GTX 1630]",
+        "device_id": "0x1F83",
+        "chip": "TU117",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce GTX 1630 (0x00001F83) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "turing",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      }
+    },
+    {
+      "name": "win-nvidia-gtx1650",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x1F82, chip TU117), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce GTX 1650",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "TU117 [GeForce GTX 1650]",
+        "device_id": "0x1F82",
+        "chip": "TU117",
+        "candidates": 3
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce GTX 1650 (0x00001F82) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "turing",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.2139
+    },
+    {
+      "name": "win-nvidia-gtx1650super",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x2187, chip TU116), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce GTX 1650 SUPER",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "TU116 [GeForce GTX 1650 SUPER]",
+        "device_id": "0x2187",
+        "chip": "TU116",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce GTX 1650 SUPER (0x00002187) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "turing",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      }
+    },
+    {
+      "name": "win-nvidia-gtx1660",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x2184, chip TU116), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce GTX 1660",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "TU116 [GeForce GTX 1660]",
+        "device_id": "0x2184",
+        "chip": "TU116",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce GTX 1660 (0x00002184) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "turing",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.2008
+    },
+    {
+      "name": "win-nvidia-gtx1660super",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x21C4, chip TU116), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce GTX 1660 SUPER",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "TU116 [GeForce GTX 1660 SUPER]",
+        "device_id": "0x21C4",
+        "chip": "TU116",
+        "candidates": 2
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce GTX 1660 SUPER (0x000021C4) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "turing",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.3068
+    },
+    {
+      "name": "win-nvidia-gtx1660ti",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x2182, chip TU116), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce GTX 1660 Ti",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "TU116 [GeForce GTX 1660 Ti]",
+        "device_id": "0x2182",
+        "chip": "TU116",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce GTX 1660 Ti (0x00002182) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "turing",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      }
+    },
+    {
+      "name": "win-nvidia-rtx2060",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x1F08, chip TU106), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce RTX 2060",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "TU106 [GeForce RTX 2060 Rev. A]",
+        "device_id": "0x1F08",
+        "chip": "TU106",
+        "candidates": 2
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 (0x00001F08) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "turing",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.1501
+    },
+    {
+      "name": "win-nvidia-rtx2060super",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x1F06, chip TU106), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce RTX 2060 SUPER",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "TU106 [GeForce RTX 2060 SUPER]",
+        "device_id": "0x1F06",
+        "chip": "TU106",
+        "candidates": 3
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "turing",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.1456
+    },
+    {
+      "name": "win-nvidia-rtx2070",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x1F02, chip TU106), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce RTX 2070",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "TU106 [GeForce RTX 2070]",
+        "device_id": "0x1F02",
+        "chip": "TU106",
+        "candidates": 2
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2070 (0x00001F02) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "turing",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.0912
+    },
+    {
+      "name": "win-nvidia-rtx2070super",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x1E84, chip TU104), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce RTX 2070 SUPER",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "TU104 [GeForce RTX 2070 SUPER]",
+        "device_id": "0x1E84",
+        "chip": "TU104",
+        "candidates": 3
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2070 SUPER (0x00001E84) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "turing",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.1789
+    },
+    {
+      "name": "win-nvidia-rtx2080",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x1E82, chip TU104), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce RTX 2080",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "TU104 [GeForce RTX 2080]",
+        "device_id": "0x1E82",
+        "chip": "TU104",
+        "candidates": 2
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2080 (0x00001E82) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "turing",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      }
+    },
+    {
+      "name": "win-nvidia-rtx2080super",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x1E81, chip TU104), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce RTX 2080 SUPER",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "TU104 [GeForce RTX 2080 SUPER]",
+        "device_id": "0x1E81",
+        "chip": "TU104",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2080 SUPER (0x00001E81) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "turing",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      }
+    },
+    {
+      "name": "win-nvidia-rtx2080ti",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x1E04, chip TU102), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce RTX 2080 Ti",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "TU102 [GeForce RTX 2080 Ti]",
+        "device_id": "0x1E04",
+        "chip": "TU102",
+        "candidates": 2
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2080 Ti (0x00001E04) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "turing",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      }
+    },
+    {
+      "name": "win-nvidia-rtx3050",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x2507, chip GA106), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce RTX 3050",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "GA106 [Geforce RTX 3050]",
+        "device_id": "0x2507",
+        "chip": "GA106",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3050 (0x00002507) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "ampere",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      }
+    },
+    {
+      "name": "win-nvidia-rtx3060",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x2501, chip GA106), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce RTX 3060",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "GA106 [GeForce RTX 3060]",
+        "device_id": "0x2501",
+        "chip": "GA106",
+        "candidates": 5
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3060 (0x00002501) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "ampere",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      }
+    },
+    {
+      "name": "win-nvidia-rtx3060ti",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x2486, chip GA104), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce RTX 3060 Ti",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "GA104 [GeForce RTX 3060 Ti]",
+        "device_id": "0x2486",
+        "chip": "GA104",
+        "candidates": 4
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3060 Ti (0x00002486) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "ampere",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      }
+    },
+    {
+      "name": "win-nvidia-rtx3070",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x2484, chip GA104), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce RTX 3070",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "GA104 [GeForce RTX 3070]",
+        "device_id": "0x2484",
+        "chip": "GA104",
+        "candidates": 3
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3070 (0x00002484) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "ampere",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      }
+    },
+    {
+      "name": "win-nvidia-rtx3070ti",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x2482, chip GA104), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce RTX 3070 Ti",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "GA104 [GeForce RTX 3070 Ti]",
+        "device_id": "0x2482",
+        "chip": "GA104",
+        "candidates": 3
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3070 Ti (0x00002482) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "ampere",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.1173
+    },
+    {
+      "name": "win-nvidia-rtx3080",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x2206, chip GA102), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce RTX 3080",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "GA102 [GeForce RTX 3080]",
+        "device_id": "0x2206",
+        "chip": "GA102",
+        "candidates": 2
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3080 (0x00002206) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "ampere",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.1295
+    },
+    {
+      "name": "win-nvidia-rtx3080ti",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x2208, chip GA102), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce RTX 3080 Ti",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "GA102 [GeForce RTX 3080 Ti]",
+        "device_id": "0x2208",
+        "chip": "GA102",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3080 Ti (0x00002208) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "ampere",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.1463
+    },
+    {
+      "name": "win-nvidia-rtx3090",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x2204, chip GA102), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce RTX 3090",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "GA102 [GeForce RTX 3090]",
+        "device_id": "0x2204",
+        "chip": "GA102",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3090 (0x00002204) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "ampere",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.1569
+    },
+    {
+      "name": "win-nvidia-rtx3090ti",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x2203, chip GA102), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce RTX 3090 Ti",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "GA102 [GeForce RTX 3090 Ti]",
+        "device_id": "0x2203",
+        "chip": "GA102",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3090 Ti (0x00002203) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "ampere",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      }
+    },
+    {
+      "name": "win-nvidia-rtx4060",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x2882, chip AD107), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce RTX 4060",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "AD107 [GeForce RTX 4060]",
+        "device_id": "0x2882",
+        "chip": "AD107",
+        "candidates": 2
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4060 (0x00002882) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "lovelace",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      }
+    },
+    {
+      "name": "win-nvidia-rtx4060ti",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x2803, chip AD106), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce RTX 4060 Ti",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "AD106 [GeForce RTX 4060 Ti]",
+        "device_id": "0x2803",
+        "chip": "AD106",
+        "candidates": 2
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4060 Ti (0x00002803) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "lovelace",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.4279
+    },
+    {
+      "name": "win-nvidia-rtx4070",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x2786, chip AD104), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce RTX 4070",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "AD104 [GeForce RTX 4070]",
+        "device_id": "0x2786",
+        "chip": "AD104",
+        "candidates": 2
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4070 (0x00002786) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "lovelace",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.118
+    },
+    {
+      "name": "win-nvidia-rtx4070super",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x2783, chip AD104), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce RTX 4070 SUPER",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "AD104 [GeForce RTX 4070 SUPER]",
+        "device_id": "0x2783",
+        "chip": "AD104",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4070 SUPER (0x00002783) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "lovelace",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.1348
+    },
+    {
+      "name": "win-nvidia-rtx4070ti",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x2782, chip AD104), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce RTX 4070 Ti",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "AD104 [GeForce RTX 4070 Ti]",
+        "device_id": "0x2782",
+        "chip": "AD104",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4070 Ti (0x00002782) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "lovelace",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      }
+    },
+    {
+      "name": "win-nvidia-rtx4070tisuper",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x2705, chip AD103), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce RTX 4070 Ti SUPER",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "AD103 [GeForce RTX 4070 Ti SUPER]",
+        "device_id": "0x2705",
+        "chip": "AD103",
+        "candidates": 2
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4070 Ti SUPER (0x00002705) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "lovelace",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.0967
+    },
+    {
+      "name": "win-nvidia-rtx4080",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x2704, chip AD103), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce RTX 4080",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "AD103 [GeForce RTX 4080]",
+        "device_id": "0x2704",
+        "chip": "AD103",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4080 (0x00002704) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "lovelace",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.096
+    },
+    {
+      "name": "win-nvidia-rtx4080super",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x2702, chip AD103), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce RTX 4080 SUPER",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "AD103 [GeForce RTX 4080 SUPER]",
+        "device_id": "0x2702",
+        "chip": "AD103",
+        "candidates": 2
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4080 SUPER (0x00002702) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "lovelace",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.0986
+    },
+    {
+      "name": "win-nvidia-rtx4090",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x2684, chip AD102), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce RTX 4090",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "AD102 [GeForce RTX 4090]",
+        "device_id": "0x2684",
+        "chip": "AD102",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4090 (0x00002684) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "lovelace",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.1064
+    },
+    {
+      "name": "win-nvidia-rtx5060",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x2D05, chip GB206), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce RTX 5060",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "GB206 [GeForce RTX 5060]",
+        "device_id": "0x2D05",
+        "chip": "GB206",
+        "candidates": 2
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5060 (0x00002D05) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "blackwell",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      }
+    },
+    {
+      "name": "win-nvidia-rtx5060ti",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x2D04, chip GB206), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce RTX 5060 Ti",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "GB206 [GeForce RTX 5060 Ti]",
+        "device_id": "0x2D04",
+        "chip": "GB206",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5060 Ti (0x00002D04) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "blackwell",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.3775
+    },
+    {
+      "name": "win-nvidia-rtx5070",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x2F04, chip GB205), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce RTX 5070",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "GB205 [GeForce RTX 5070]",
+        "device_id": "0x2F04",
+        "chip": "GB205",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5070 (0x00002F04) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "blackwell",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.0756
+    },
+    {
+      "name": "win-nvidia-rtx5070ti",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x2C05, chip GB203), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce RTX 5070 Ti",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "GB203 [GeForce RTX 5070 Ti]",
+        "device_id": "0x2C05",
+        "chip": "GB203",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5070 Ti (0x00002C05) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "blackwell",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.1885
+    },
+    {
+      "name": "win-nvidia-rtx5080",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x2C02, chip GB203), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce RTX 5080",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "GB203 [GeForce RTX 5080]",
+        "device_id": "0x2C02",
+        "chip": "GB203",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "blackwell",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.0338
+    },
+    {
+      "name": "win-nvidia-rtx5090",
+      "note": "Built from public sources: pci.ids 2026.07.21 (device 0x2B85, chip GB202), Dawn gpu_info.json (architecture), and ANGLE Context.cpp/Renderer11.cpp (string format). Identity only; capabilities remain bound to the host. WARNING: the DXGI description follows the vendor naming convention and was not measured on this exact hardware.",
+      "form_factor": "desktop",
+      "rarity": "common",
+      "name_confidence": "convention",
+      "subgroup_verified": true,
+      "source": {
+        "model": "GeForce RTX 5090",
+        "pci_ids_version": "2026.07.21",
+        "pci_ids_entry": "GB202 [GeForce RTX 5090]",
+        "device_id": "0x2B85",
+        "chip": "GB202",
+        "candidates": 1
+      },
+      "webgl": {
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "webgpu": {
+        "vendor": "nvidia",
+        "architecture": "blackwell",
+        "subgroup_min_size": 32,
+        "subgroup_max_size": 32
+      },
+      "measured_tampering_p1": 0.1204
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+profiles.json
+real_browser.json
+proxy.txt
+*.log
+*.zip
+*.sha256
+!SOURCE_MANIFEST.sha256
+Browser3-*/
+release-candidate/

@@ -1,0 +1,175 @@
+BROWSER3 END-USER LICENSE TERMS
+=================================
+
+Version 1.0, effective 2026-08-10. Reviewed by the Provider against the EU/Czech
+consumer-law, LGPL, export-control, and sanctions sources listed in the release legal
+record. This is the Provider's own assessment, not an independent legal opinion or a
+decision of a government authority.
+
+Provider: Radek Cisar, an individual (the "Provider").
+Product: Browser3 (the "Product").
+Distribution status: the Provider makes this Product version outside any trade, business,
+craft, or profession, without active affiliate or revenue-share monetization. This factual
+statement does not displace any mandatory legal classification that applies in practice.
+
+0. OPEN-SOURCE TERMS TAKE PRIORITY
+----------------------------------
+The Product contains third-party components under their own licenses, including Chromium
+(BSD and other licenses), BoringSSL (Apache-2.0), and FFmpeg (LGPL-2.1-or-later). See the
+Third-Party Notices document (`THIRD_PARTY_NOTICES.txt` in the binary package and
+`THIRD_PARTY_NOTICES.md` in the public source snapshot), about:credits, and `licenses`.
+
+Nothing in these terms limits rights granted by a third-party license. If these terms
+conflict with a third-party license, that third-party license controls for its component.
+This includes rights to inspect, modify, reverse engineer where permitted, and relink LGPL
+components.
+
+1. LICENSE GRANT
+----------------
+Subject to these terms, the Provider grants you a non-exclusive, non-transferable,
+royalty-free, perpetual license to install and use the Product on devices you control.
+Public Browser3 source files separately offered under Mozilla Public License 2.0 remain
+governed by that license.
+
+The Product is offered without monetary payment, account registration, or personal data
+supplied to the Provider as contractual consideration. A third-party download host may
+process network and account data under its own terms; it does not act as Browser3 telemetry.
+
+2. RESTRICTIONS
+---------------
+You must not:
+
+  a) misrepresent the Product or another person's work as your own;
+  b) remove copyright, license, attribution, or notice files;
+  c) distribute a modified build in a way that falsely suggests it is an official
+     Provider build; or
+  d) use the Product unlawfully.
+
+These restrictions do not reduce broader rights that a third-party component's license
+may grant for that component.
+
+3. INSPECTION, MODIFICATION, AND RELINKING
+------------------------------------------
+These terms do not prohibit reverse engineering, decompilation, modification, or
+relinking to the extent required to exercise rights under a third-party license, debug a
+modified LGPL component, or relink the Product with a replacement LGPL component.
+
+FFmpeg is statically linked. Under the written offer in that Third-Party Notices document,
+the Provider will supply the corresponding FFmpeg source, relinkable object files for the
+rest of the application, and relinking instructions for the exact distributed version.
+The offer remains valid for at least three years after distribution of that version.
+Any charge will not exceed the cost of physically performing distribution, as permitted
+by LGPL-2.1 section 6(c).
+
+The written offer is independent of this EULA. Accepting these terms is not a condition
+for receiving or exercising rights granted directly by LGPL-2.1-or-later or another
+third-party license.
+
+4. ACCEPTABLE USE
+-----------------
+The Product changes information that a browser presents to websites. You are solely
+responsible for how you use it. Use may violate the terms of a service you visit; the
+Provider is not a party to that relationship and does not encourage such violations.
+
+The Product is not intended to bypass DRM or other copyright-protection measures, gain
+unauthorized access, commit fraud, evade sanctions, conceal abuse, or perform any other
+unlawful act. Use it only where you have authorization and in compliance with applicable
+law and service terms.
+
+5. EXPORT CONTROLS AND SANCTIONS
+--------------------------------
+Browser3 is distributed free of charge through a public GitHub release without an
+account, payment, license-validation, download-approval, or country-blocking service.
+GitHub applies its own terms and trade controls but does not act as the Provider's
+export-compliance agent.
+
+You must not download, receive, supply, re-export, support, or use the Product where doing
+so would violate applicable export-control or sanctions laws. You represent that you are
+not a restricted or sanctioned person or entity, are not acting for or on behalf of one,
+your location and intended destination are not prohibited, and you will not use the
+Product for a prohibited military, intelligence, repression, surveillance,
+sanctions-evasion, or other unlawful end use.
+
+The Provider may refuse individualized builds, licenses, updates, or support where a
+sanctions or prohibited-end-use concern is identified. This section does not narrow
+rights granted directly under MPL-2.0 or another third-party open-source license.
+See EXPORT_AND_SANCTIONS.md for the distribution model and classification notice.
+
+6. INTENTIONAL LIMITATIONS
+--------------------------
+The Product contains no Widevine or other bundled DRM module. Services that require DRM
+will not work. This is not a defect.
+
+The Product is not signed with a Windows Authenticode certificate. Windows may display
+"Unknown publisher" or a SmartScreen warning. Verify the release using the signed
+SHA256SUMS.txt and the procedure in README.md.
+
+7. PRIVACY AND NETWORK DATA
+---------------------------
+The Provider operates no Browser3 telemetry or activity-reporting service. Browser3 does
+not add collection of usage statistics or visited-page history.
+
+Profiles, hardware-probe results, proxy credentials, cookies, history, and browsing data
+remain on your computer below the normal Browser3 and Chromium data locations.
+
+When a proxy is configured, Browser3 requests the proxy exit's country and time zone from
+ip-api.com through that proxy. The service sees the proxy exit address, not your direct
+public IP. The response contains the country code, time zone, and exit address and is
+cached locally below %LOCALAPPDATA%\Browser3\cache. No request is made without a proxy.
+The free endpoint uses unencrypted HTTP.
+
+Chromium contains its own network services, such as component updates and browsing-safety
+features. Their controls are available in Chromium settings. The Provider does not add a
+separate reporting channel to them.
+
+A proxy operator can observe traffic sent through its service. This is inherent to proxy
+use and is independent of these terms.
+
+8. SUPPORT
+----------
+The free Product is provided without any entitlement to support, updates, or fixes.
+
+9. DISCLAIMER AND LIMITATION OF LIABILITY
+-----------------------------------------
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THE PRODUCT IS PROVIDED "AS IS",
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EXPRESS OR IMPLIED.
+
+The Product is supplied free of charge by an individual. To the maximum extent permitted
+by law, the Provider's liability is limited to the minimum liability that cannot lawfully
+be excluded or limited.
+
+Nothing in these terms excludes or limits non-waivable consumer rights or liability that
+applicable law does not permit the parties to exclude, including liability for intentional
+or grossly negligent harm where such a limitation is prohibited.
+
+Where mandatory consumer law applies, statutory conformity rights, remedies, complaint
+rights, and rules on unfair contract terms remain available even if another provision of
+these terms would state otherwise.
+
+10. TERMINATION
+--------------
+This license terminates if you materially breach section 2, 4, or 5. Termination does not
+affect rights granted directly by third-party component licenses.
+
+11. GOVERNING LAW
+-----------------
+These terms are governed by the laws of the Czech Republic. This choice does not override
+applicable conflict-of-laws rules. The United Nations Convention on Contracts for the
+International Sale of Goods does not apply.
+
+Jurisdiction and venue are determined by applicable procedural and consumer law. Nothing
+in these terms requires a consumer to bring or defend a claim in a forum other than one
+available under mandatory law.
+
+If you are a consumer resident in another EU member state, this choice of law does not
+deprive you of mandatory protections of your country of residence. Czech alternative
+dispute resolution information is available from the Czech Trade Inspection Authority,
+Central Inspectorate - ADR Department, Gorazdova 1969/24, 120 00 Prague 2,
+adr@coi.gov.cz, https://coi.gov.cz/informace-o-adr/.
+
+12. CHANGES
+-----------
+The terms included with your Product version govern that version. Terms for later versions
+may differ but do not retroactively replace the terms supplied with your existing copy.
+
+Provider contact: radekcisar77@gmail.com
