@@ -1,23 +1,70 @@
-# Browser3 public layer
+<div align="center">
 
-Browser3 is a Windows Chromium-based browser that keeps each generated browser identity deterministic and internally consistent. This repository snapshot contains the public Python orchestration and profile-generation layer, the public GPU template catalog, and release documentation.
+# Browser3
 
-## Download
+### One installation. Multiple independent browser identities.
 
-Download the installable Windows package from the
-[latest official Browser3 release](https://github.com/Radek-B3/browser3/releases/latest).
-The application archive is named `Browser3-<version>-windows-x64.zip`.
+**A multi-browser workspace for Windows, built on Chromium.**
 
-GitHub's automatically generated `Source code (zip)` and `Source code (tar.gz)` files
-are source snapshots, not Browser3 installers, and are not part of the signed asset set.
-For the signed public-source snapshot, use the release asset named
-`Browser3-public-source-<version>.zip`.
+[![Windows](https://img.shields.io/badge/Windows-10%2F11-0078D4?logo=windows&logoColor=white)](#system-requirements)
+[![Chromium](https://img.shields.io/badge/Chromium-149-4285F4?logo=googlechrome&logoColor=white)](#)
+[![Public layer](https://img.shields.io/badge/public_layer-MPL--2.0-2C3E50)](LICENSE)
+[![Latest release](https://img.shields.io/badge/download-latest_release-2EA44F)](https://github.com/Radek-B3/browser3/releases/latest)
 
-## Important scope notice
+</div>
 
-This repository is not the complete source code of the Browser3 executable and cannot build `chrome.exe`. The native fingerprint-masking engine, its Chromium integration patches, internal detector tests, baselines, and research material are private. The exact boundary is documented in [PUBLIC_BOUNDARY.md](PUBLIC_BOUNDARY.md).
+Browser3 lets you create and run multiple separate browser profiles from one installation. Every profile has its own browsing data and a deterministic, internally consistent browser identity that stays stable across reloads and restarts.
 
-Files in this public snapshot are licensed under MPL-2.0 unless a file or third-party notice says otherwise. The downloadable Browser3 binary is governed by [BINARY_EULA.txt](BINARY_EULA.txt) together with the applicable open-source licenses documented in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The public GitHub distribution model and recipient restrictions are described in [EXPORT_AND_SANCTIONS.md](EXPORT_AND_SANCTIONS.md).
+Instead of blanking fingerprint surfaces or changing values on every page load, Browser3 builds each profile around the real Windows host and keeps its signals coherent. The result is a practical **multi-browser** setup where every profile behaves like a distinct, persistent browser.
+
+## Why Browser3?
+
+| | |
+|---|---|
+| **Multiple browser identities** | Create as many persistent profiles as you need and run them separately or together. |
+| **Stable by design** | A profile keeps the same deterministic identity across page reloads and browser restarts. |
+| **Internally consistent** | Browser, hardware, screen, locale, time zone, GPU, and network-facing values are kept coherent. |
+| **Native Chromium integration** | Fingerprint handling lives inside the browser rather than in injected page scripts or JavaScript hooks. |
+| **Isolated profile data** | Every browser identity uses its own Chromium user-data directory, cookies, history, and settings. |
+| **Optional sticky proxies** | A proxy can remain paired with the same profile so its network identity does not unexpectedly rotate between launches. |
+| **Local-first** | Profiles, browsing data, hardware measurements, proxy credentials, and logs stay on your computer. Browser3 adds no vendor telemetry. |
+
+## Quick start
+
+Download `Browser3-<version>-windows-x64.zip` from the [latest official release](https://github.com/Radek-B3/browser3/releases/latest), extract it, open PowerShell in the extracted directory, and run:
+
+```powershell
+python launcher.py
+```
+
+That single command measures the host when needed, creates a fresh browser profile, and launches it. Run it again whenever you want another independent browser identity.
+
+The packaged Chromium runtime is self-contained below `runtime/`. Keep that directory intact; `chrome.exe` depends on its adjacent DLL, resource, locale, and data files.
+
+### Working with multiple browsers
+
+```powershell
+# Reopen an existing browser identity
+python launcher.py --profile 1
+
+# Launch every generated browser profile
+python launcher.py --all
+
+# Show all profile, proxy, desktop, and build options
+python launcher.py --help
+```
+
+If `proxy.txt` contains proxies, Browser3 automatically assigns them to profiles with persistent mappings. A proxy is optional; its reputation and stability can materially affect network risk scores.
+
+## Download the right file
+
+Use the installable Windows archive named:
+
+```text
+Browser3-<version>-windows-x64.zip
+```
+
+GitHub's automatically generated `Source code (zip)` and `Source code (tar.gz)` downloads are source snapshots, not Browser3 installers. The signed public-source snapshot is published separately as `Browser3-public-source-<version>.zip`.
 
 ## System requirements
 
@@ -28,54 +75,39 @@ Files in this public snapshot are licensed under MPL-2.0 unless a file or third-
 | Graphics | A physical GPU with working hardware acceleration |
 | Display scaling | Any Windows scaling level; 125% and 150% are supported |
 
-Browser3 refuses to generate or start a profile when it cannot establish a coherent host
-configuration. Unsupported cases include a SwiftShader/software fallback adapter,
-Windows older than 10 version 1809, and a missing host probe.
+Browser3 stops instead of creating an incoherent profile when it cannot establish a valid host configuration. Unsupported cases include a SwiftShader/software fallback adapter, Windows older than version 1809, and a failed host probe.
 
-Windows N/KN editions require the Microsoft Media Feature Pack for H.264/AAC playback.
-Browser3 checks the required operating-system codecs during startup.
+Windows N/KN editions require the Microsoft Media Feature Pack for H.264/AAC playback. Widevine CDM is not included, so DRM-protected streaming services may not work.
 
-Widevine CDM is not included, so DRM-protected streaming services may not work.
+## Where your data lives
 
-## Using the binary package
+Browser3 treats its installation directory as read-only and stores mutable state below `%LOCALAPPDATA%\Browser3`:
 
-From the extracted release directory:
+| Data | Location |
+|---|---|
+| Generated identities and browser data | `%LOCALAPPDATA%\Browser3\profiles` |
+| Hardware and network caches | `%LOCALAPPDATA%\Browser3\cache` |
+| Sticky proxy mappings and migration state | `%LOCALAPPDATA%\Browser3\state` |
+| Logs | `%LOCALAPPDATA%\Browser3\logs` |
 
-```powershell
-python scripts/probe_host.py --force
-python generate_profiles.py
-python launcher.py --profile 1
-```
+Profiles are generated for the computer on which they run. Copying a profile to a different machine is unsupported because its hardware claims would no longer match the host.
 
-The packaged Chromium runtime is self-contained below `runtime/`. Keep that directory
-intact; `chrome.exe` depends on its adjacent DLL, resource, locale, and data files.
+## Verify your download
 
-Run `python launcher.py --help` for profile, proxy, desktop, and build options. Do not move generated profile JSON or Chromium user data back into the installation directory; runtime state belongs under `%LOCALAPPDATA%\Browser3`.
+Verify `SHA256SUMS.txt.asc` with the public key in `browser3-release-key.asc`, then compare the archive's SHA-256 hash with `SHA256SUMS.txt`.
 
-The source snapshot alone intentionally omits production reference inputs and the proprietary executable. Use the matching binary package when running Browser3.
+Browser3 PE files are not Authenticode-signed. Do not disable Microsoft SmartScreen or antivirus protection to run them.
 
-## Runtime data
+## Public source and native browser
 
-Browser3 stores mutable state per user:
+This repository contains the public Python orchestration and profile-generation layer, the public GPU template catalog, and release documentation. It is not the complete source code of the Browser3 executable and cannot build `chrome.exe`.
 
-- generated identities and Chromium user data: `%LOCALAPPDATA%\Browser3\profiles`
-- hardware and network caches: `%LOCALAPPDATA%\Browser3\cache`
-- sticky mappings and migration state: `%LOCALAPPDATA%\Browser3\state`
-- logs: `%LOCALAPPDATA%\Browser3\logs`
+The native fingerprint engine, Chromium integration patches, detector tests, baselines, and research material remain private. See [Public and private boundary](PUBLIC_BOUNDARY.md) for the exact split.
 
-The installation directory is treated as read-only.
+Public files are licensed under [MPL-2.0](LICENSE) unless stated otherwise. The downloadable binary is governed by [BINARY_EULA.txt](BINARY_EULA.txt) together with the applicable open-source licenses in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-## Verify a download
+## Responsible use and support
 
-Verify `SHA256SUMS.txt.asc` with the public key in `browser3-release-key.asc`, then compare the archive SHA-256 with `SHA256SUMS.txt`. Browser3 PE files are not Authenticode-signed; do not disable SmartScreen or antivirus protections to run it.
+Use Browser3 only on systems and accounts you own or are authorized to test. The [Acceptable Use Policy](ACCEPTABLE_USE.md) applies to official binaries, services, and support. Distribution and use must also comply with applicable export-control and sanctions laws; see [Export and sanctions](EXPORT_AND_SANCTIONS.md).
 
-## Safety and support
-
-Use Browser3 only on systems and accounts you own or are authorized to test. The [Acceptable Use Policy](ACCEPTABLE_USE.md) applies to official binaries, services, and support, without restricting the rights granted for MPL-licensed source code.
-
-Browser3 must not be supplied or used in violation of applicable export-control or
-sanctions laws. This release has no account, payment, download-approval, or country-blocking
-service; see [EXPORT_AND_SANCTIONS.md](EXPORT_AND_SANCTIONS.md) for the exact scope and the
-Provider's self-classification notice.
-
-See [PRIVACY.md](PRIVACY.md) for local and network data behavior. For ordinary help, see [SUPPORT.md](SUPPORT.md). Report security issues privately as described in [SECURITY.md](SECURITY.md).
+For local and network data behavior, read [Privacy](PRIVACY.md). For help, see [Support](SUPPORT.md). Report security issues privately as described in [Security](SECURITY.md).
