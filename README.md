@@ -2,9 +2,9 @@
 
 # Browser3
 
-### One installation. Multiple independent browser identities.
+**A multi-profile browser for people and AI agents.**
 
-**A multi-browser workspace for Windows, built on Chromium.**
+*One installation. Multiple independent, persistent browser identities.*
 
 [![Windows](https://img.shields.io/badge/Windows-10%2F11-0078D4?logo=windows&logoColor=white)](#system-requirements)
 [![Chromium](https://img.shields.io/badge/Chromium-149-4285F4?logo=googlechrome&logoColor=white)](#)
@@ -13,15 +13,16 @@
 
 </div>
 
-Browser3 lets you create and run multiple separate browser profiles from one installation. Every profile has its own browsing data and a deterministic, internally consistent browser identity that stays stable across reloads and restarts.
+Browser3 lets people and AI agents create and run multiple isolated browser profiles from one installation. Each profile has its own browsing data and a deterministic, internally consistent browser identity that remains stable across reloads and restarts.
 
-Instead of blanking fingerprint surfaces or changing values on every page load, Browser3 builds each profile around the real Windows host and keeps its signals coherent. The result is a practical **multi-browser** setup where every profile behaves like a distinct, persistent browser.
+Instead of blanking fingerprint surfaces or changing values on every page load, Browser3 builds each profile around the real Windows host and keeps its signals coherent. Each profile therefore behaves like an independent, persistent browser identity.
 
 ## Why Browser3?
 
 | | |
 |---|---|
 | **Multiple browser identities** | Create as many persistent profiles as you need and run them separately or together. |
+| **Agent-friendly CLI** | Create, reopen, and launch isolated browser identities through predictable command-line workflows. |
 | **Stable by design** | A profile keeps the same deterministic identity across page reloads and browser restarts. |
 | **Internally consistent** | Browser, hardware, screen, locale, time zone, GPU, and network-facing values are kept coherent. |
 | **Native Chromium integration** | Fingerprint handling lives inside the browser rather than in injected page scripts or JavaScript hooks. |
@@ -41,14 +42,11 @@ That single command measures the host when needed, creates a fresh browser profi
 
 The packaged Chromium runtime is self-contained below `runtime/`. Keep that directory intact; `chrome.exe` depends on its adjacent DLL, resource, locale, and data files.
 
-### Working with multiple browsers
+### Working with multiple profiles
 
 ```powershell
 # Reopen an existing browser identity
 python launcher.py --profile 1
-
-# Launch every generated browser profile
-python launcher.py --all
 
 # Show all profile, proxy, desktop, and build options
 python launcher.py --help
