@@ -31,23 +31,16 @@ import sys
 import browser3_paths as paths
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-CHROME_VERSION = "149.0.7827.201"       # == cílový build tag
+CHROME_VERSION = "149.0.7827.201"       # Must equal the target build tag.
 CHROME_MAJOR = CHROME_VERSION.split(".")[0]
-# major.minor.build sdílené všemi profily — MUSÍ se rovnat reálnému buildu, mění se
-# jen patch (viz CHROME_PATCH_DIST). C++ call-site tenhle prefix validuje a claim
-# s jiným prefixem zahodí.
+# All profiles share the real major.minor.build; only the patch may vary. Native
+# validation rejects a claim with a different prefix.
 CHROME_BASE = CHROME_VERSION.rsplit(".", 1)[0]
 
-# Per-profil patch verze (UA-CH fullVersionList). Celá flotila hlásící identický
-# patch je sama o sobě linkovací signál — reálná populace je přes patche rozprostřená.
-# Hodnoty OVĚŘENÉ ze syrového chromiumdash API (fetch_releases, Stable/Windows), NE
-# vymyšlené: neexistující patch by byl horší než žádný split.
-#   .199/.200/.201 mají IDENTICKÝ timestamp (2026-06-25) => souběžné rollout arms,
-#   reálné stroje mezi nimi opravdu mix mají → dominantní.
-#   .198 (06-24) a .196/.197 (06-23) byly během dní nahrazeny → jen tenký chvost.
-# Starší clustery (.22 z 05-20 atd.) VĚDOMĚ vynechány: stroj 2 měsíce bez updatu při
-# aktivním auto-update je implauzibilní, a vzácnost = nápadnost (stejná lekce jako
-# font-hiding magnitude strop).
+# Per-profile UA-CH patches follow verified Chromium Dash Stable/Windows releases.
+# Versions .199-.201 share the 2026-06-25 timestamp and dominate the distribution;
+# .196-.198 form a small recent tail. Older clusters are intentionally excluded as
+# implausible on a machine with active automatic updates.
 CHROME_PATCH_DIST = [
     ("149.0.7827.201", 30),
     ("149.0.7827.200", 25),
@@ -57,12 +50,9 @@ CHROME_PATCH_DIST = [
     ("149.0.7827.196", 5),
 ]
 
-# Bez proxy = host defaulty (OS je cs-CZ, pravidlo 4). S proxy přepíše launcher dle
-# geo (Tier 1, zatím odloženo — timezone/locale spoofing v C++ ještě neexistuje).
-# POZN.: pole `languages`/`accept_language` jsou jen DEKLARATIVNÍ — FpProfileConfig z profilu
-# čte pouze `timezone`, navigator.languages i Accept-Language řídí VÝHRADNĚ launcher přes pref
-# intl.accept_languages (ensure_lang_pref). Držíme je zarovnané se stock cs-CZ Chrome (3 položky,
-# bez zbytečného en-US, aby JSON nelhal o tom, co se reálně aplikuje.
+# No proxy uses the cs-CZ host defaults; the launcher replaces them from proxy GeoIP.
+# `languages` and `accept_language` are declarative. The launcher applies both web
+# surfaces through intl.accept_languages, while native configuration reads time zone.
 DEFAULT_LOCALE = {
     "languages": ["cs-CZ", "cs", "en"],
     "accept_language": "cs-CZ,cs;q=0.9,en;q=0.8",
@@ -70,28 +60,22 @@ DEFAULT_LOCALE = {
     "country": "CZ",
 }
 
-# --- HOST (přenositelnost): všechno hardware-vázané se ČTE Z PROBU ---------------
-# Reálná GPU/screen/hardware/fonty hostitele pochází ze `scripts/probe_host.py`
-# (cache gpu_profiles/host_current.json, schema v2). ŽÁDNÝ tichý fallback: dřív tu
-# byla konstanta RX 580, takže na NVIDIA/Intel stroji by profily mlčky claimovaly
-# cizí kartu jako „host identitu" = přesně ta hardware-bound nekoherence, kvůli které
-# je cross-vendor povolen jen atomickým GPU blokem podle ověřeného hardware ceilingu.
-# Bez probu se tedy generování ZASTAVÍ; konstanta smí být jen explicitně vyžádaný
-# override (env FP_HOST_WEBGL="vendor|renderer") pro diagnostiku.
+# --- Host portability: every hardware-bound value comes from the host probe. ---
+# There is no silent development-machine fallback. Generation stops without schema-v2
+# measurements; FP_HOST_WEBGL is an explicit diagnostic override only.
 _HOST_CACHE = {"loaded": False, "data": None}
 _WARNED = set()
 
 
 def _warn_once(key, msg):
-    """Hlasité varování, ale bez zaplavení výstupu (5+ profilů = 5× stejná hláška)."""
+    """Emit a warning once instead of repeating it for every profile."""
     if key not in _WARNED:
         _WARNED.add(key)
         print(msg)
 
 
 def host_info(quiet=True):
-    """Skutečný host z cache probu, nebo None. Nespouští prohlížeč — jen čte cache
-    (probe se pouští z launcheru / scripts/probe_host.py)."""
+    """Return cached host measurements without launching the browser."""
     if not _HOST_CACHE["loaded"]:
         _HOST_CACHE["loaded"] = True
         try:
@@ -111,7 +95,7 @@ NO_PROBE_HINT = (
 
 
 def host_require(what="profile generation"):
-    """Host je POVINNÝ. Vrací dict z probu, jinak tvrdě končí s návodem."""
+    """Require and return host measurements, or stop with instructions."""
     h = host_info()
     if not h:
         raise SystemExit(f"{what}: {NO_PROBE_HINT}")
@@ -119,7 +103,7 @@ def host_require(what="profile generation"):
 
 
 def _env_host_webgl():
-    """Explicitní override pro diagnostiku: FP_HOST_WEBGL="vendor|renderer"."""
+    """Read the explicit diagnostic FP_HOST_WEBGL="vendor|renderer" override."""
     raw = os.environ.get("FP_HOST_WEBGL", "").strip()
     if not raw:
         return None
@@ -130,50 +114,35 @@ def _env_host_webgl():
 
 
 def host_webgl():
-    """Top-level webgl.* = REÁLNÁ identita hostitele (z probu). Bez probu = chyba."""
+    """Return the measured host identity for top-level webgl values."""
     env = _env_host_webgl()
     if env:
-        _warn_once("env_webgl", f"POZOR: FP_HOST_WEBGL override -> {env['renderer']}")
+        _warn_once("env_webgl", f"WARNING: FP_HOST_WEBGL override -> {env['renderer']}")
         return env
     h = host_require("host GPU")
     gl = h.get("webgl") or {}
     if not gl.get("renderer"):
-        raise SystemExit(f"host GPU: probe neobsahuje webgl.renderer.\n  {NO_PROBE_HINT}")
+        raise SystemExit(f"host GPU: the probe has no webgl.renderer.\n  {NO_PROBE_HINT}")
     return {"vendor": gl.get("vendor"), "renderer": gl["renderer"]}
 
 
 def __getattr__(name):
-    """PEP 562: HOST_WEBGL / GPU_RENDERER_DIST zůstávají dostupné jako atributy modulu
-    (zpětná kompatibilita), ale vyhodnocují se AŽ PŘI PŘÍSTUPU. Eager verze by při
-    chybějícím probu shodila celý import — a tím i launcher, který ten probe teprve
-    umí spustit."""
+    """Expose backward-compatible host attributes lazily through PEP 562."""
     if name == "HOST_WEBGL":
         return host_webgl()
     if name == "GPU_RENDERER_DIST":
         return gpu_renderer_dist()
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
-# GPU name-rotace = per-profil osa, která rotuje JEN marketingový NÁZEV renderer
-# stringu v rámci REÁLNÉ host device ID 0x67DF (Ellesmere/Polaris, GCN4). RX 470/480/
-# 570/580 jsou všechny legitimně 0x67DF → NENÍ to fabrikace, jen jiný obchodní název
-# téhož křemíku. device ID zůstává reálná → pixel-hash i WebGPU (amd/gcn-4) sedí →
-# KOHERENTNÍ. Rozbíjí renderer same-host linker (dřív všech 5 profilů = identický
-# string, distinct 1/5). vendor konstantní AMD (rotace vendoru netřeba).
-#
-# Ověřeno scratch/gpu_string_experiment.py (N=3, --no-proxy, deterministické skóre):
-#   RX 580 = 0.044 (control/host), RX 570 = 0.037, RX 480 = 0.039  → tampering ≤ control.
-#   RX 470 VYŘAZEN (0.107 + vm 0.23). Cross-vendor / jiná device ID (NVIDIA 0x2504,
-#   Navi 0x73FF) NEpoužita: WebGPU stále hlásí amd/gcn-4 → WebGL↔WebGPU nekoherence,
-#   a produkční (proxy) + CreepJS arm zatím neproběhly (viz paměť gpu-spoof-hardware-
-#   ceiling — původní cross-vendor regrese 0.5-0.65 byla nejspíš proxy-konfoundovaná).
+# GPU name rotation changes only the marketing name within the real 0x67DF
+# Ellesmere/Polaris device identity. Pixel output and WebGPU remain coherent.
+# Measurements: RX 580 control 0.044, RX 570 0.037, RX 480 0.039. RX 470 was
+# excluded at 0.107 tampering and 0.23 VM score.
 _GPU_SFX = "Direct3D11 vs_5_0 ps_5_0, D3D11)"
 
 
 def gpu_renderer_dist():
-    """Name-rotace je vázaná na KONKRÉTNÍ křemík (0x67DF Ellesmere) — proto se smí
-    použít JEN na tomto AMD gcn-4 hostu. Na jiném stroji by RX 570/480 stringy byly
-    fabrikace (jiná device ID než reálná karta) → vracíme jen host renderer beze změny;
-    diverzitu tam dělá atomický gpu blok (režim `family`)."""
+    """Return safe renderer-name variants only for an actual 0x67DF host."""
     host = host_webgl()
     h = host_info()
     is_ellesmere = "0x000067DF" in (host.get("renderer") or "")
@@ -183,33 +152,22 @@ def gpu_renderer_dist():
     if not is_ellesmere:
         return [(host["renderer"], 100)]
     return [
-        (host["renderer"], 40),  # reálná host karta (nejčastější, on-manifold)
+        (host["renderer"], 40),  # Real host adapter remains the dominant option.
         ("ANGLE (AMD, Radeon RX 570 Series (0x000067DF) " + _GPU_SFX, 30),
         ("ANGLE (AMD, Radeon RX 480 Graphics (0x000067DF) " + _GPU_SFX, 30),
     ]
 
 
-# GPU_RENDERER_DIST je dostupné přes modulové __getattr__ (lazy) — viz výše.
+# GPU_RENDERER_DIST remains available lazily through module __getattr__.
 
-# --- Cross-vendor GPU template (atomická WebGL+WebGPU identita) -------------------
-# EXPERIMENTÁLNÍ osa (plán PLAN_CROSS_VENDOR_GPU_MASKOVANI). Default VYPNUTO: bez
-# aktivní šablony se generuje původní AMD name-rotace (GPU_RENDERER_DIST) a ŽÁDNÝ
-# gpu blok → WebGPU zůstává nativní amd/gcn-4, vše koherentní jako dosud.
-#
-# Aktivace přes env FP_GPU_TEMPLATE=<name> (Python jen ORCHESTRUJE — vybere hotovou
-# šablonu z gpu_profiles/templates/<name>.json; validace/clamp a runtime maskování
-# jsou v C++ FpProfileConfig, ne tady). Aplikuje se na VŠECHNY profily, aby šel
-# 5-profilový gate izolovat jako čistou NVIDIA/Intel větev vs zmrazená baseline.
-#
-# Kontrakt atomicity: top-level webgl.* se drží HOST (bezpečný fallback), cross-vendor
-# identita jde JEN do gpu bloku. Když gpu blok neprojde C++ validací → webgl padne na
-# host + webgpu nativní amd → koherentní host, nikdy půl NVIDIA. Viz ParseGpuBlock.
+# --- Cross-vendor GPU templates: atomic WebGL + WebGPU identities. ---
+# FP_GPU_TEMPLATE selects a complete catalog entry for all profiles. Native C++
+# validates the block atomically; top-level webgl remains a coherent host fallback.
 GPU_TEMPLATES_FILE = os.path.join(ROOT, "resources", "gpu_templates.json")
 
 
 def load_gpu_template(name):
-    """Načte minimální gpu šablonu (name/webgl/webgpu) z gpu_profiles/templates.
-    Vrací dict připravený jako profil["gpu"] blok, nebo None při chybě/prázdnu."""
+    """Load and validate the minimal name/WebGL/WebGPU template block."""
     if not name:
         return None
     templates = {item.get("name"): item for item in all_gpu_templates()}
@@ -234,58 +192,33 @@ def load_gpu_template(name):
 
 
 def active_gpu_template():
-    """Vrací (name, block) aktivní cross-vendor šablony z env, nebo (None, None).
-    FP_GPU_TEMPLATE připne JEDNU konkrétní kartu na VŠECHNY profily — override nad
-    režimy níže (používá to scripts/verify_all_gpu_templates.py pro izolaci karty)."""
+    """Return the environment-selected template, which overrides GPU modes."""
     name = os.environ.get("FP_GPU_TEMPLATE", "").strip()
     if not name:
         return None, None
     return name, load_gpu_template(name)
 
 
-# --- Režimy výběru GPU (přepínač --gpu) -----------------------------------------
-# off    = žádný gpu blok → nativní host GPU (dosavadní chování, AMD name-rotace)
-# family = stejný vendor A stejná architektura jako host → pixely/limity/arch sedí
-#          na reálný křemík; nejbezpečnější cross-card diverzita
-# common = běžné moderní diskrétní karty (rarity=common) POD stropem tamperingu;
-#          DEFAULT pro nové profily
-# all    = všechny šablony včetně vzácných (vyšší tampering — viz VERIFICATION_121)
+# --- GPU selection modes (--gpu). ---
+# off uses the native host, family preserves vendor and architecture, common uses
+# measured common discrete adapters, and all includes rare experimental templates.
 GPU_MODES = ("off", "family", "common", "all")
 DEFAULT_GPU_MODE = "common"
 _TEMPLATE_CACHE = {"loaded": False, "items": []}
 
-# Strop měřeného tamperingu pro populační pooly (`common`, `family`).
-# PROČ: `rarity` je klasifikace podle rozšířenosti karty, NE podle toho, jak na ni
-# reaguje detektor — a ty dvě věci spolu nekorelují. Ve sweepu má `common` karta
-# GTX 1080 hodnotu 0.5044 a RTX 4060 Ti 0.4279, zatímco `rare` UHD 750 jen 0.2354.
-# Bez tohohle filtru byla přidělená karta loterie: 2026-07-26 měřeno na gate 1-5
-# Intel HD 615 = 0.3849 a Iris Plus = 0.1742 proti 0.0049-0.0153 u moderních
-# diskrétních adapters, při jinak identické konfiguraci. U produktu, který se rozdává
-# bez podpory, je taková loterie
-# nejhorší možná vlastnost — uživatel nepozná, že si vytáhl špatnou kartu.
-#
-# Hodnota je na ŠKÁLE SWEEPU (`measured_tampering_p1`), ne na dnešní absolutní
-# škále — sweep měřil za jiných podmínek (RX 6750 XT: sweep 0.067, dnes 0.0153).
-# Pro filtr je rozhodující POŘADÍ, které sedí; práh 0.15 nechává 22 z 48 měřených.
-# Karty BEZ měření se do populačních poolů nepouští: nezměřená karta je nezměřené
-# riziko a `all` je od toho, aby šly zkoušet.
+# Population pools use a measured-tampering ceiling because catalog rarity does not
+# predict detector response. The sweep-scale threshold retains 22 of 48 measured
+# adapters. Unmeasured templates remain available only through `all`.
 GPU_MAX_MEASURED_TAMPERING = 0.15
 
-# Hostitelé, u kterých `common` NENÍ bezpečný default: capabilities se nefabrikují
-# (WebGL extensions/parametry i WebGPU features/limits pochází z reálného Dawn/ANGLE
-# adaptéru), takže na slabé integrované grafice by claim „RTX 4070" seděl vedle limitů,
-# které taková karta mít nemůže. Cross-vendor bylo bez regrese ověřeno na diskrétní
-# kartě (VERIFICATION_121 = měření z JEDNOHO hostu), ne na iGPU.
-# Konzervativní řešení do doby, než bude capability-tier filtr ověřen na druhém stroji:
-# na slabém/integrovaném hostu se defaultně jede `family` (stejný vendor
-# i architektura = limity sedí na reálný křemík).
+# Weak integrated hosts default to `family`, since real Dawn/ANGLE capabilities
+# cannot plausibly sit beside a claimed high-end discrete adapter.
 _WEAK_GPU_MARKERS = ("Intel(R) HD", "Intel(R) UHD", "Iris", "Radeon(TM) Graphics",
                      "Vega .* Graphics", "Microsoft Basic", "SwiftShader", "llvmpipe")
 
 
 def host_gpu_is_weak():
-    """Heuristika „slabá/integrovaná grafika" z renderer stringu hosta + fallback
-    adaptéru. Konzervativní: při pochybnostech False (= chová se jako dosud)."""
+    """Conservatively identify weak or integrated graphics from host measurements."""
     h = host_info()
     if not h:
         return False
@@ -296,7 +229,7 @@ def host_gpu_is_weak():
 
 
 def default_gpu_mode():
-    """Default režim --gpu pro NOVÉ profily. Viz _WEAK_GPU_MARKERS."""
+    """Return the default --gpu mode for new profiles."""
     if host_gpu_is_weak():
         _warn_once("weak_gpu",
                    "[host] weak/integrated graphics: defaulting to --gpu family "
@@ -306,7 +239,7 @@ def default_gpu_mode():
 
 
 def all_gpu_templates():
-    """Načte všechny šablony (jednou) jako list dictů; seřazeno podle jména."""
+    """Load all templates once and return them sorted by name."""
     if not _TEMPLATE_CACHE["loaded"]:
         _TEMPLATE_CACHE["loaded"] = True
         if not os.path.isfile(GPU_TEMPLATES_FILE):
@@ -326,18 +259,15 @@ def all_gpu_templates():
 
 
 def gpu_pool(mode):
-    """Seřazený seznam JMEN šablon pro daný režim. Prázdný = žádný gpu blok.
-    Pořadí je deterministické (podle jména), aby výběr ze seedu byl stabilní."""
+    """Return a deterministic sorted template-name pool for a GPU mode."""
     if mode not in GPU_MODES:
         raise SystemExit(f"unknown --gpu mode {mode!r}, allowed: {', '.join(GPU_MODES)}")
     if mode == "off":
         return []
-    # host-* jsou identity-control šablony (duplikují win-* kartu) — do populačních
-    # poolů nepatří, jinak by ta karta měla dvojnásobnou váhu.
+    # Exclude host-* control duplicates so their matching win-* cards are not overweighted.
     items = [t for t in all_gpu_templates() if not t.get("name", "").startswith("host-")]
     if mode == "family":
-        # bez probu neumíme určit rodinu — a tichý prázdný pool by znamenal „nativní
-        # host GPU", což u cizího stroje NENÍ to, co uživatel žádal (3.1) → tvrdá chyba
+        # Family selection requires measured vendor and architecture.
         h = host_require("--gpu family")
         wg = h.get("webgpu") or {}
         v, a = wg.get("vendor"), wg.get("architecture")
@@ -346,18 +276,14 @@ def gpu_pool(mode):
                  and (t.get("webgpu") or {}).get("architecture") == a]
     elif mode == "common":
         items = [t for t in items if t.get("rarity") == "common"]
-    # "all" = beze změny; strop tamperingu se tam schválně NEuplatňuje (je to režim
-    # „chci i vzácné karty", tedy vědomý experiment).
+    # `all` deliberately bypasses the ceiling for explicit experiments.
     if mode in ("family", "common"):
         items = _under_tampering_cap(items, mode)
     return sorted({t["name"] for t in items})
 
 
 def _under_tampering_cap(items, mode):
-    """Vyřadí karty nad `GPU_MAX_MEASURED_TAMPERING` a karty bez měření.
-    Když by tím pool zůstal prázdný (typicky `family` na staré/exotické rodině),
-    vrátí původní seznam a HLASITĚ varuje — prázdný pool by tiše znamenal „žádný
-    gpu blok", tedy nativní host GPU místo režimu, který uživatel žádal."""
+    """Filter risky or unmeasured adapters, warning if that would empty the pool."""
     keep = [t for t in items
             if isinstance(t.get("measured_tampering_p1"), (int, float))
             and t["measured_tampering_p1"] <= GPU_MAX_MEASURED_TAMPERING]
@@ -378,8 +304,7 @@ def _under_tampering_cap(items, mode):
 
 
 def pick_gpu_template(seed, mode):
-    """Deterministický per-profil výběr karty (pravidlo 8: stabilní pro daný
-    profil+režim, různý napříč profily). Vrací jméno šablony nebo None."""
+    """Select a deterministic per-profile template name, or None."""
     pool = gpu_pool(mode)
     if not pool:
         return None
@@ -387,7 +312,7 @@ def pick_gpu_template(seed, mode):
 
 
 def gpu_block_for(seed, mode):
-    """(name, block) pro profil: FP_GPU_TEMPLATE override > režim. (None, None) = off."""
+    """Return (name, block); FP_GPU_TEMPLATE overrides the mode."""
     env_name, env_block = active_gpu_template()
     if env_block:
         return env_name, env_block
@@ -396,18 +321,9 @@ def gpu_block_for(seed, mode):
         return None, None
     return name, load_gpu_template(name)
 
-# --- Screen: SOFT osa (per-profil), ALE s tvrdými koherenčními mantinely --------
-# 1) color_depth/pixel_depth MUSÍ sedět s reálnou hloubkou displeje hostitele —
-#    fingerprint.com ji cross-checkuje přes GPU/canvas; přepis 32->24 zvedl
-#    tampering o +0.38 (CHANGELOG 2026-07-07). Tento host hlásí 32 → pin.
-# 2) devicePixelRatio NENÍ spoofovatelný (C++ nemá accessor → drží reálný host =
-#    1.0). Proto smíme claimovat JEN rozlišení plauzibilní při dpr=1.0 (nativní,
-#    100% scaling). NIKDY 1536x864 apod. — to implikuje 125% scaling → dpr 1.25,
-#    což by nesedělo s reálným dpr 1.0 = tell.
-# 3) Okno musí fyzicky sednout na reálný monitor (PHYS) A být <= claimovaného
-#    screen.avail (jinak innerWidth > screen.width = nemožné = tell). Řeší
-#    pick_window() + launcher --window-size.
-# Rozdělení ~ reálný desktop share (dpr~1). Váhy jsou celočíselné (sčítají ~100).
+# --- Screen: a soft per-profile axis with hard coherence constraints. ---
+# Pin color depth and DPR to the measured host. Candidate resolutions must be
+# plausible at DPR 1, and the physical window must fit both host and claimed screen.
 RESOLUTIONS = [
     ((1920, 1080), 42),
     ((2560, 1440), 12),
@@ -419,56 +335,39 @@ RESOLUTIONS = [
     ((1280, 720), 4),
     ((1280, 1024), 3),
 ]
-TASKBAR_H = 40                 # Windows spodní taskbar → avail_height = height-40
+TASKBAR_H = 40                 # Windows bottom taskbar: avail_height = height - 40.
 
-# hardwareConcurrency: claim MUSÍ být <= reálnému počtu jader hostitele (claim výš =
-# VM-ish tell, paměť profile-04-elevated-tampering: 24 = VM). Distribuce níže je
-# populační tvar; host_hwconc_dist() ji ořízne stropem konkrétního stroje.
+# hardwareConcurrency must not exceed measured host cores; clamp this population shape.
 HWCONC_DIST = [(8, 40), (16, 25), (12, 15), (6, 10), (4, 10)]
-# deviceMemory: spec buckety, strop 8 — i když host hlásí víc, >8 je out-of-spec
-# tampering tell (C++ GetDeviceMemory to navíc clampuje). host_devmem_dist() ořízne
-# na min(host, 8).
+# deviceMemory uses specification buckets capped at min(host, 8).
 DEVMEM_DIST = [(8, 65), (4, 35)]
 DEVMEM_SPEC_MAX = 8
 
 
 def host_color_depth():
-    """screen.colorDepth REÁLNÉHO hosta (hardware+verze vázané, pin). Bylo natvrdo 32;
-    hodnota ale není vlastností stroje, nýbrž Chromium VERZE (149 hlásí syrový
-    BITSPIXEL 32, od 150 upstream vrací 24 — CHANGELOG 2026-07-24). Čtení z probu tedy
-    řeší i rebase-note: probe měří nemaskovanou hodnotu na TOMHLE buildu."""
+    """Return native screen.colorDepth measured on this Chromium build."""
     s = host_require("screen.colorDepth").get("screen") or {}
     d = s.get("color_depth") or s.get("colorDepth")
     if not d:
-        raise SystemExit(f"screen.colorDepth: probe neobsahuje hloubku.\n  {NO_PROBE_HINT}")
+        raise SystemExit(f"screen.colorDepth: the probe has no depth.\n  {NO_PROBE_HINT}")
     return int(d)
 
 
 def host_dpr():
-    """Reálný devicePixelRatio hosta, tj. škálování Windows (100 % = 1.0, 150 % = 1.5).
-    NENÍ spoofovatelný (C++ accessor neexistuje) a celý pool RESOLUTIONS platí jen pro
-    dpr==1.0 — na HiDPI hostu ho proto srovná launcher, viz hidpi_scale_flags()."""
+    """Return measured host devicePixelRatio; the launcher normalizes HiDPI."""
     s = host_require("devicePixelRatio").get("screen") or {}
     dpr = s.get("device_pixel_ratio", s.get("devicePixelRatio"))
     if not dpr:
-        raise SystemExit(f"devicePixelRatio: probe neobsahuje dpr.\n  {NO_PROBE_HINT}")
+        raise SystemExit(f"devicePixelRatio: the probe has no DPR.\n  {NO_PROBE_HINT}")
     return float(dpr)
 
 
 def hidpi_scale_flags(quiet=True):
-    """Flagy, kterými se HiDPI host srovná na dpr 1.0. Prázdný list = není potřeba.
+    """Return flags that normalize HiDPI to the measured DPR-1 baseline.
 
-    ZMĚŘENO 2026-07-26 (gate 1-5, Release, bez proxy, škálování Windows 150 %):
-      - bez zásahu (stránka vidí dpr 1.5 vedle maskovaného screen) avg tampering
-        0.0920, tedy BEZ postihu — původní tvrdé odmítnutí HiDPI nebylo podložené;
-      - s `--force-device-scale-factor=1` se dpr vrátí na 1, screen sedí na claim
-        a tampering je bit po bitu shodný s během při 100 % (0.3849/0.1742/0.0094/
-        0.0049/0.0153).
-    Volí se ta druhá varianta: je to přesně referenční stav, takže platí celý pool
-    RESOLUTIONS i všechna dosavadní měření. Cena je kosmetická — UI prohlížeče je na
-    150% displeji malé.
-
-    Defenzivní: bez probu vrací [] (launcher probe teprve umí spustit)."""
+    A 2026-07-26 five-profile Release gate at 150% scaling matched the frozen 100%
+    baseline after forcing scale factor 1. Return no flags before host measurement.
+    """
     h = host_info()
     if not h:
         return []
@@ -484,14 +383,11 @@ def hidpi_scale_flags(quiet=True):
 
 
 def host_physical():
-    """(šířka, použitelná výška) REÁLNÉHO monitoru ve FYZICKÝCH pixelech — okno musí
-    fyzicky sednout. Z probu (screen.avail*, tedy už bez taskbaru); dřív natvrdo
-    1920×1040, což nesedělo ani na tenhle host (1680×1050).
+    """Return measured physical monitor width and available height in pixels.
 
-    Probe měří v CSS pixelech při aktuálním škálování, takže na HiDPI hostu vrací
-    avail/dpr (při 150 %: 1120×660). Prohlížeč ale poběží s vynuceným scale factorem 1
-    (hidpi_scale_flags), kde je použitelná plocha zase fyzická → násobíme zpět dpr.
-    Při dpr==1.0 je to no-op, tedy pro běžný host beze změny."""
+    The probe reports CSS pixels at current scaling. Because Browser3 normalizes
+    HiDPI to scale factor 1, multiply those measurements back by host DPR.
+    """
     s = host_require("physical monitor").get("screen") or {}
     w = s.get("avail_width") or s.get("width")
     h = s.get("avail_height")
@@ -504,8 +400,7 @@ def host_physical():
 
 
 def _clamp_dist(dist, cap, label):
-    """Ořízne distribuci na hodnoty <= cap (claim nikdy nad realitu hosta). Kdyby
-    ořez vyprázdnil pool (slabý stroj), nechá jen nejnižší bucket."""
+    """Clamp a distribution to the host ceiling, retaining its lowest bucket."""
     kept = [(v, w) for v, w in dist if v <= cap]
     if not kept:
         lowest = min(v for v, _ in dist)
@@ -520,7 +415,7 @@ def _clamp_dist(dist, cap, label):
 
 
 def host_hwconc_dist():
-    """HWCONC_DIST oříznutá na reálný počet logických jader hostitele."""
+    """Return HWCONC_DIST capped to measured logical host cores."""
     hw = host_require("hardwareConcurrency").get("hardware") or {}
     cap = hw.get("hardware_concurrency")
     if not cap:
@@ -529,44 +424,33 @@ def host_hwconc_dist():
 
 
 def host_devmem_dist():
-    """DEVMEM_DIST oříznutá na min(host, spec strop 8)."""
+    """Return DEVMEM_DIST capped to the host and specification maximum of 8."""
     hw = host_require("deviceMemory").get("hardware") or {}
     cap = hw.get("device_memory") or DEVMEM_SPEC_MAX
     return _clamp_dist(DEVMEM_DIST, min(int(cap), DEVMEM_SPEC_MAX), "device_memory")
 
-# prefers-color-scheme = ČISTÁ per-profil osa diverzity (A1). Žádný hardware
-# cross-check (je to uživatelská/OS preference, nekoheruje s GPU/canvas/screen) a
-# NEkonzumuje font rozpočet → ortogonální ke všem stávajícím osám. Reálná populace
-# je rozdělená zhruba na půl (adopce dark módu ~40-50 %). Override teče přes
-# WebPreferences → Settings → StyleEngine, takže media dotaz `prefers-color-scheme`
-# I rendering/system colors jsou koherentní (ne jen matchMedia = žádný mismatch tell).
+# prefers-color-scheme is a clean user-preference axis with no hardware cross-check.
+# Native WebPreferences propagation keeps media queries and rendered colors coherent.
 COLOR_SCHEME_DIST = [("light", 55), ("dark", 45)]
 
 
 def _seed_int(seed, key):
-    """32bit deterministická hodnota z (seed, key) — JEDINÝ zdroj náhody pro všechny
-    osy. Nahradil dřívější krájení profile_id na slice ([0:8], [8:16], ...): to bylo
-    vyčerpané (62 ze 64 hex znaků) a každá nová osa by musela hledat volné místo.
-    Salted hash je nezávislý napříč klíči, ortogonální bez ruční správy rozsahů a
-    škáluje na libovolný počet os. Stabilní per-profil (pravidlo 8) — stejný seed
-    a klíč dá vždy stejnou hodnotu.
+    """Return the deterministic 32-bit value for a seed and stable axis key.
 
-    Konvence klíčů: "domena" nebo "domena:polozka" (např. "hw:conc", "font:mask",
-    "speech:de"). Klíč je součást otisku profilu — jeho PŘEJMENOVÁNÍ přehodí danou
-    osu u všech profilů, takže se klíče nemění bez důvodu."""
+    Salted keys provide independent axes without slicing a finite profile ID. Key
+    names are part of the profile identity and must not be renamed casually.
+    """
     h = hashlib.sha256(f"{seed}:{key}".encode("utf-8")).hexdigest()
     return int(h[:8], 16)
 
 
 def _seed_frac(seed, key):
-    """Rovnoměrné 0..1 z (seed, key) — pro prevalenční prahy ("má tenhle profil ten
-    balíček nainstalovaný?"). Viz _seed_int."""
+    """Return a uniform 0..1 value for prevalence thresholds."""
     return _seed_int(seed, key) / float(1 << 32)
 
 
 def _weighted_pick(value_int, dist):
-    """Deterministický vážený výběr: dist=[(item,weight),...]. value_int ze seedu
-    (dnes vždy _seed_int → 0..2^32-1; modulo bias je při té šířce zanedbatelný)."""
+    """Select deterministically from `(item, weight)` pairs."""
     total = sum(w for _, w in dist)
     r = value_int % total
     cum = 0
@@ -578,45 +462,38 @@ def _weighted_pick(value_int, dist):
 
 
 def bump_ua_to_build(ua: str) -> str:
-    """Přepíše Chrome verzi v UA stringu na CHROME_VERSION (pravidlo 8)."""
-    # UA nese formu Chrome/143.0.0.0 -> Chrome/149.0.0.0 (minor/build/patch 0 dle Chrome konvence v UA)
+    """Replace the UA Chrome version with CHROME_VERSION."""
+    # Chrome UA convention zeros minor, build, and patch.
     return re.sub(r"Chrome/\d+\.\d+\.\d+\.\d+", f"Chrome/{CHROME_MAJOR}.0.0.0", ua)
 
 
 def pick_chrome_version(seed):
-    """Per-profil Chrome patch verze (klíč "ua:patch", viz _seed_int).
-    Major.minor.build zůstává == build (pravidlo 8), liší se jen patch."""
+    """Choose a per-profile patch while preserving the real major.minor.build."""
     return _weighted_pick(_seed_int(seed, "ua:patch"), CHROME_PATCH_DIST)
 
 
 def build_ua_ch(full_version):
-    """UA Client Hints. Jediné pole, které C++ z `ua` reálně čte, jsou `brands`
-    (GetExtraBrand → dopíše branded "Google Chrome" k Chromium buildu) a `full_version`
-    (GetChromeFullVersion → fullVersionList/uaFullVersion). Zbytek je DEKLARATIVNÍ:
+    """Build UA Client Hints configuration.
 
-      user_agent, platform_version, architecture, bitness, wow64, model
-        → no shipped Python consumer reads these fields. The UA string and
-          platformVersion generuje Chromium nativně z hostu. Držíme je tu jen jako
-          dokumentaci očekávaného stavu; ZMĚNA TĚCHTO POLÍ NEMÁ ŽÁDNÝ ÚČINEK.
-
-    platform_version se vědomě NESPOOFUJE: CreepJS getWindows() odvozuje verzi Windows
-    z FONTŮ (Segoe Fluent Icons = Win11) a fonty umíme jen skrývat, ne přidávat — claim
-    Win11 na Win10 hostu by byl přímý rozpor platformVersion vs fonty."""
+    Native C++ consumes brands and full_version. Remaining fields document the
+    expected native host state. Platform version is deliberately not spoofed because
+    Windows-version font markers cannot be fabricated coherently.
+    """
     return {
         "platform": "Windows",
         "mobile": False,
-        # low-entropy brands: autoritativní zdroj je nativní GREASE algoritmus Chrome 149.
+        # Native Chrome 149 GREASE remains authoritative for low-entropy brands.
         "brands": [
             {"brand": "Chromium", "version": CHROME_MAJOR},
             {"brand": "Google Chrome", "version": CHROME_MAJOR},
         ],
-        # high-entropy (getHighEntropyValues / Accept-CH) — per-profil patch:
+        # High entropy (getHighEntropyValues / Accept-CH) with per-profile patch.
         "full_version": full_version,
         "full_version_list": [
             {"brand": "Chromium", "version": full_version},
             {"brand": "Google Chrome", "version": full_version},
         ],
-        "platform_version": "10.0.0",   # deklarativní; reálně z hostu (Windows 10)
+        "platform_version": "10.0.0",   # Declarative; native value comes from host.
         "architecture": "x86",
         "bitness": "64",
         "wow64": False,
@@ -625,56 +502,42 @@ def build_ua_ch(full_version):
 
 
 def pick_hwconc(seed):
-    """Per-profil hardwareConcurrency z vážené distribuce (klíč "hw:conc").
-    Distribuce je oříznutá na reálný počet jader hosta (claim méně netripuje — gate
-    ověřeno; claim víc = VM tell)."""
+    """Choose hardwareConcurrency without exceeding measured host cores."""
     return _weighted_pick(_seed_int(seed, "hw:conc"), host_hwconc_dist())
 
 
 def pick_devmem(seed):
-    """Per-profil deviceMemory {4,8} z vážené distribuce (klíč "hw:mem"),
-    oříznuté na min(host, spec strop 8)."""
+    """Choose deviceMemory capped by the host and specification."""
     return _weighted_pick(_seed_int(seed, "hw:mem"), host_devmem_dist())
 
 
 def pick_webgl_renderer(seed):
-    """Per-profil marketingový název GPU (name-rotace), klíč "gpu".
-    Rotuje JEN NÁZEV; device ID 0x67DF (=pixel-hash, WebGPU amd/gcn-4) i vendor (AMD)
-    zůstávají reálný host → koherentní. Ověřeno gate. Viz GPU_RENDERER_DIST."""
+    """Choose a safe per-profile GPU marketing-name variant."""
     return _weighted_pick(_seed_int(seed, "gpu"), gpu_renderer_dist())
 
 
 def pick_color_scheme(seed):
-    """Per-profil prefers-color-scheme dark|light (klíč "media:colorscheme")."""
+    """Choose per-profile prefers-color-scheme."""
     return _weighted_pick(_seed_int(seed, "media:colorscheme"), COLOR_SCHEME_DIST)
 
 
 def pick_media_devices(seed):
-    """Per-profil cap na počet media zařízení (A2, hide-only). Cap jen SNIŽUJE reálný
-    počet zařízení daného druhu (C++ nikdy nefabrikuje) → 'profil tu periferii nemá'
-    = on-manifold (reálné stroje se liší webkamerou/mikrofonem). Rozbíjí same-host
-    enumerateDevices linker (jinak všechny profily na 1 stroji = identický seznam).
-    Absentní klíč = bez capu (nativní počet). Klíče "media:videoin" / "media:audioin"
-    / "media:audioout"."""
+    """Choose hide-only media-device caps; native C++ never fabricates devices."""
     devices = {}
-    # webkamera: desktopy ji často nemají → část profilů ji skryje (cap 0)
+    # Desktops often have no webcam, so some profiles cap video input at zero.
     if _weighted_pick(_seed_int(seed, "media:videoin"), [(1, 55), (0, 45)]) == 0:
         devices["max_video_input"] = 0
-    # mikrofon: ~ půl na půl
+    # Split microphone presence approximately evenly.
     if _weighted_pick(_seed_int(seed, "media:audioin"), [(1, 50), (0, 50)]) == 0:
         devices["max_audio_input"] = 0
-    # audiovýstup: capuje se na 1 ("stroj má jen reproduktory"), NIKDY na 0 —
-    # nula zvukových výstupů je VM tell, proto se tenhle druh dřív necapoval vůbec.
-    # Cap 1 je on-manifold: reálné stroje mají 1 (repro) nebo 2+ (repro + headset).
-    # Na hostu s jediným výstupem je to no-op (C++ cap jen snižuje, nefabrikuje).
+    # Audio output may be capped at one, never zero; native C++ only reduces counts.
     if _weighted_pick(_seed_int(seed, "media:audioout"), [(0, 60), (1, 40)]) == 1:
         devices["max_audio_output"] = 1
     return devices
 
 
 def pick_screen(seed):
-    """Per-profil rozlišení z RESOLUTIONS (klíč "screen:res"). Vrací dict se
-    screen poli + koherentním oknem (viz mantinely u RESOLUTIONS)."""
+    """Choose a per-profile resolution and coherent window geometry."""
     (w, h) = _weighted_pick(_seed_int(seed, "screen:res"), RESOLUTIONS)
     avail_w, avail_h = w, h - TASKBAR_H
     win_w, win_h = pick_window(seed, avail_w, avail_h)
@@ -684,18 +547,13 @@ def pick_screen(seed):
         "avail_width": avail_w, "avail_height": avail_h,
         "color_depth": depth, "pixel_depth": depth,
         "device_pixel_ratio": host_dpr(),
-        # Outer velikost okna — launcher ji předá jako --window-size. Garantuje
-        # okno <= claimovaného screen.avail A <= reálného monitoru → innerWidth
-        # nikdy nepřeteče screen.width (jinak nemožné = tell).
+        # Launcher passes this outer size; it fits both claimed and real screens.
         "window_width": win_w, "window_height": win_h,
     }
 
 
 def pick_window(seed, avail_w, avail_h):
-    """Koherentní outer velikost okna: <= claimovaný avail A <= reálný monitor
-    (physical monitor hosta z probu). Mírný per-profil jitter dolů (klíče
-    "screen:winw"/"screen:winh") přidá outerWidth entropii a napodobí
-    ne-maximalizované okno."""
+    """Choose a slightly jittered outer window that fits claimed and real screens."""
     phys_w, phys_avail_h = host_physical()
     max_w = min(avail_w, phys_w)
     max_h = min(avail_h, phys_avail_h)
@@ -706,32 +564,18 @@ def pick_window(seed, avail_w, avail_h):
     return win_w, win_h
 
 
-# Text-rendering edging = PRVNÍ čistá per-profil diverzita otisku na jednom stroji
-# (paměť text-rendering-edging-clean-lever). AA mód protéká nativně do rasteru glyfů
-# → mění text/canvas hash A netripuje (grayscale/alias jsou koherentní reálné Windows
-# configy, tampering dokonce klesá). Ověřeno hash probe + detekční gate.
+# Text edging is a clean per-profile axis. Native glyph rasterization changes text
+# and canvas hashes while remaining a coherent Windows configuration.
 TEXT_EDGING_CYCLE = ["lcd", "grayscale", "alias"]
 
 
 def pick_text_edging(seed):
-    """Deterministicky ze seedu (stabilní per-profil, různé napříč profily). ~3
-    buckety (kolize při >3 profilech nevadí — pořád reálná osa). subpixel/hinting
-    se NEmění: hinting je na Windows no-op (DWrite ignoruje), subpixel-off při LCD
-    je nekoherentní = tampering 0.98. Měníme jen edging (překlápí AA koherentně).
-    Klíč "text:edging"."""
+    """Choose stable text edging; keep subpixel and hinting unchanged."""
     return TEXT_EDGING_CYCLE[_seed_int(seed, "text:edging") % len(TEXT_EDGING_CYCLE)]
 
 
-# Font hiding = DRUHÁ čistá per-profil osa (ortogonální k edgingu). Font
-# enumeration (measureText/src:local) byl PŘED tím identický u všech profilů =
-# dokonalý cross-profile linker (probe: fontlist_hash 1/5). Řešení: každý profil
-# "nemá" koherentní podmnožinu OPTIONAL fontů. Skrýváme celé jazykové balíčky
-# (East-Asian + supplemental skripty), které Windows instaluje on-demand přes
-# language features — na reálném cs-CZ stroji bez těch packů legitimně chybí, tedy
-# on-manifold (jiný, ale možný stroj). NIKDY neskrýváme core Latin/UI fonty (jejich
-# absence = tell). Skrytí neexistujícího fontu = no-op → list degraduje graceful
-# na jiných verzích Windows i na Linuxu (tam prostě nic neskryje). C++ FontCache
-# vrací pro skrytou rodinu nullopt → fallback jako u reálně chybějícího fontu.
+# Font hiding is a second clean axis. Hide coherent optional language bundles that
+# may legitimately be absent, never core Latin/UI fonts. Missing families are a no-op.
 FONT_BUNDLES = [
     ("jp", ["MS Gothic", "MS PGothic", "MS UI Gothic", "MS Mincho", "MS PMincho",
             "Yu Gothic", "Yu Gothic UI", "Yu Gothic Light", "Yu Gothic Medium",
@@ -749,23 +593,17 @@ FONT_BUNDLES = [
 ]
 
 
-# --- Font inventář HOSTA (přenositelnost) ---------------------------------------
-# Skrýt neexistující font = no-op. Na font-chudém stroji se tedy osa TIŠE smrskne
-# (profily zkolabují na stejný font set = ztráta diverzity), a hůř: rozpočtový guard
-# počítaný proti statickému FP_PROBED_FONTS by nadhodnocoval, kolik rodin reálně
-# zbyde → implauzibilní řídkost = tampering 0.94 (paměť font-hiding-magnitude-ceiling).
-# Proto se všechno počítá proti REÁLNÉMU inventáři z probu.
+# --- Host font inventory portability. ---
+# Compute every font budget against measured inventory to avoid implausible sparsity.
 
 
 def host_font_set():
-    """set(lowercase) rodin, které probe na hostu NAMĚŘIL. Prázdné/chybějící pole =
-    None → volající se chová jako dřív (statické seznamy)."""
+    """Return measured lowercase host families, or None for legacy probe data."""
     fonts = (host_info() or {}).get("fonts") or {}
     present = fonts.get("present")
     if not present:
         return None
-    # Když se od posledního probu změnily font seznamy v tomhle souboru, nové rodiny
-    # nebyly změřené a tvářily by se jako nepřítomné (= balíček se tiše nepoužije).
+    # Warn when candidate-list changes make the cached inventory incomplete.
     try:
         sys.path.insert(0, os.path.join(ROOT, "scripts"))
         import probe_host as P
@@ -779,7 +617,7 @@ def host_font_set():
 
 
 def host_fp_probed_present():
-    """Rodiny z FP.com probe listu, které host reálně má (= náš skutečný rozpočet)."""
+    """Return FP.com probe families actually present on the host."""
     hs = host_font_set()
     if hs is None:
         return list(FP_PROBED_FONTS)
@@ -787,10 +625,7 @@ def host_fp_probed_present():
 
 
 def font_hiding_enabled():
-    """Font-hiding se na font-CHUDÉM stroji VYPÍNÁ. Když už samotný host nese míň než
-    MIN_FP_FONTS_VISIBLE rodin z probe listu, každé další skrytí jde pod červenou
-    čáru — a raději žádná diverzita než implauzibilní řídkost. Není to chyba profilu,
-    takže se negeneruje výjimka, ale hlasité varování (vědomý, ne tichý stav)."""
+    """Disable hiding with a warning when the host font inventory is already sparse."""
     have = len(host_fp_probed_present())
     if have < MIN_FP_FONTS_VISIBLE:
         _warn_once("font_poor",
@@ -801,8 +636,7 @@ def font_hiding_enabled():
 
 
 def _bundle_available(fonts):
-    """Má host aspoň jednu rodinu z balíčku? Skrývat balíček, který stroj nemá, je
-    no-op — jen by zbytečně lhal v profilu a snižoval reálnou diverzitu osy."""
+    """Return whether the host contains at least one family from a bundle."""
     hs = host_font_set()
     if hs is None:
         return True
@@ -810,15 +644,11 @@ def _bundle_available(fonts):
 
 
 def pick_hidden_fonts(seed):
-    """Deterministická per-profil podmnožina OPTIONAL balíčků (viz FONT_BUNDLES) ke
-    skrytí. Celé balíčky (koherence: jazyk buď máš, nebo ne). Maska z klíče
-    "font:mask". BEZ forced de-kolize: kolize font-setů
-    jsou on-manifold (reálná populace je sdílí) a škáluje na libovolné N; u stovek
-    profilů nelze zaručit distinct, ani to není žádoucí (byl by to nereálně rovný
-    rozptyl). Seed dává přirozený, sticky per-profil výběr.
+    """Choose deterministic complete optional language bundles to hide.
 
-    Balíčky, které host nemá, se přeskakují — ale POZICE BITU v masce zůstává, takže
-    na stroji s plným inventářem je výsledek identický jako dřív (žádný drift)."""
+    Natural collisions are retained rather than forcing an unrealistically uniform
+    population. Unavailable bundles are skipped without shifting mask bits.
+    """
     if not font_hiding_enabled():
         return []
     n = len(FONT_BUNDLES)
@@ -830,34 +660,16 @@ def pick_hidden_fonts(seed):
     return hidden
 
 
-# --- Rozšířený font-pool (KONZERVATIVNÍ fáze) -----------------------------------
-# Vedle CJK/regionálních balíčků (FONT_BUNDLES výše) skrýváme i NE-jazykové OPTIONAL
-# fonty, kterými se reálné Windows stroje běžně liší podle NAINSTALOVANÉHO SOFTWARE
-# (Office symboly, CorelDRAW/Bitstream pack, HP ovladače, dev nástroje, aplikační
-# webfonty, Segoe handwriting). Absence celého balíčku = "ten software nemám" =
-# on-manifold jiný, ale reálný stroj. Rodiny jsou vybrané z REÁLNĚ nainstalovaných
-# rodin tohoto hostu (registry, 402 rodin) — skrytí neexistující rodiny je no-op,
-# takže list degraduje graceful na jiných strojích i verzích Windows. NIKDY se
-# neskrývá core/web-safe font (viz CORE_NEVER_HIDE + guard). Každý balíček má vlastní
-# hide_prob = reálná prevalence ABSENCE toho software (těžkochvostá populace, NE
-# uniformní mřížka — ta by byla sama tell). Velký "office_supplemental" balíček
-# (~60 rodin, největší swing) je zatím ODLOŽEN — přidá se až po ověření, že gate
-# nedriftuje (rozhodnutí uživatele: konzervativně nejdřív).
+# --- Conservative extended optional-font pool. ---
+# Whole software-related bundles may be absent on real Windows machines. Per-bundle
+# absence prevalence creates a natural population; core and web-safe fonts are guarded.
 OPTIONAL_FONT_BUNDLES = [
-    # (klíč, [CSS family jména], hide_prob = P(profil ten software "nemá"))
-    # POZN. k prevalencím: volíme je tak, aby balíček populaci REÁLNĚ štěpil.
-    # Prevalence blízko 0 nebo 1 = balíček je konstanta, ne proměnná → skoro nulová
-    # entropie (Bernoulli H(0.85)=0.61 bit vs H(0.5)=1.0). Kde nemáme silný realistický
-    # prior, držíme se blíž 0.5.
+    # (key, CSS family names, probability that the profile lacks this software)
     ("office_symbols", [
         "MS Outlook", "MS Reference Specialty", "MS Reference Sans Serif",
         "MT Extra", "Bookshelf Symbol 7",
     ], 0.35),
-    # Bitstream (BT) a Letraset (LET) = RŮZNÍ výrobci; CorelDRAW je bundloval spolu,
-    # ale reálně mohou přijít odděleně → dva nezávislé balíčky = 2 bity místo 1.
-    # BT obsahuje FP-probovaný "Staccato222 BT" (čerpá rozpočet, viz FP_PROBED_FONTS);
-    # LET NEobsahuje žádný FP-probovaný font → entropie ZDARMA (hýbe font_hash a
-    # CreepJS enumeration, ale nesahá na FP.com `fonts` pole).
+    # Bitstream and Letraset are independent vendors despite some joint bundling.
     ("bitstream_bt", [
         "Blackletter 686 BT", "Broadway BT", "Calligraphic 421 BT", "Cataneo BT",
         "Holiday Pi BT", "Mister Earl BT", "Old Dreadful No.7 BT", "Park Avenue BT",
@@ -873,8 +685,7 @@ OPTIONAL_FONT_BUNDLES = [
     ("hp_software", [
         "HP Simplified", "HP Simplified Light",
     ], 0.70),
-    # Cascadia se dodává s Windows Terminalem (default na Win11, běžný na Win10) →
-    # 0.80 bylo nerealisticky vysoko I entropicky slabé; 0.55 štěpí a sedí líp.
+    # Cascadia commonly arrives with Windows Terminal; 0.55 is a plausible split.
     ("dev_tools", [
         "Cascadia Code", "Cascadia Mono",
     ], 0.55),
@@ -882,15 +693,11 @@ OPTIONAL_FONT_BUNDLES = [
         "Lato", "Open Sans", "Open Sans Light", "Open Sans Semibold",
         "Open Sans Extrabold", "Charis SIL",
     ], 0.55),
-    # ODSTRANĚN "segoe_handwriting" (Segoe Print/Script): jsou to Windows 10 DEFAULT
-    # fonty — jejich absence není "nemám software", ale okleštěný Windows = tell.
-    # Gate ho navíc nikdy neexerciroval (0/5 profilů ho skrývalo) → neověřené riziko.
+    # Segoe Print/Script are Windows defaults and therefore excluded from hiding.
 ]
 
-# Core / web-safe / systémové rodiny — NIKDY neskrývat (absence = tell nebo rozbití
-# fallbacku). Guard (_assert_no_core_in_bundles) tvrdě ověří, že je žádný balíček
-# neobsahuje. POZN.: rodiny záměrně skrývané CJK balíčky (MS UI Gothic, SimSun,
-# Nirmala UI, Leelawadee UI, …) zde NEJSOU — ty jsou legitimně optional na cs-CZ.
+# Core, web-safe, and system families must never be hidden. Optional CJK families
+# are deliberately absent from this guard list.
 CORE_NEVER_HIDE = frozenset(x.lower() for x in [
     "arial", "arial black", "arial narrow", "times new roman", "courier new",
     "courier", "georgia", "verdana", "trebuchet ms", "tahoma", "comic sans ms",
@@ -908,33 +715,20 @@ CORE_NEVER_HIDE = frozenset(x.lower() for x in [
 ])
 
 
-# --- FP-probe rozpočet (zakódovaná lekce z neúspěšného `office` balíčku) ---------
-# fingerprint.com neprobuje "všechny fonty", ale FIXNÍ seznam; na tomto hostu z něj
-# detekuje těchto 17 rodin podle auditovaného referenčního měření.
-# Do `fonts` pole se promítne JEN tento průnik → to je náš rozpočet.
-# EMPIRICKY OVĚŘENO (2026-07-16, rollback): skrytí velké Office kolekce srazilo pole
-# na 4 rodiny → tampering 0.9430 / 0.7386 (fakticky odhaleno). Tell NENÍ které rodiny
-# skrýváme, ale kolik jich ZBYDE — Windows stroj se 4 fonty z probe-listu neexistuje.
-# Konzervativní pool zbývá 12-16 = ověřeně čisté (tampering 0.0706). Proto tvrdý floor.
+# --- FP.com probe budget. ---
+# A failed Office experiment left four detected families and scored 0.943/0.739.
+# Keeping 12-16 measured families was clean, so enforce a hard minimum.
 FP_PROBED_FONTS = [
     "Agency FB", "Calibri", "Century", "Century Gothic", "Franklin Gothic",
     "Haettenschweiler", "Lucida Bright", "Lucida Sans", "MS Outlook",
     "MS Reference Specialty", "MS UI Gothic", "MT Extra", "Marlett",
     "Monotype Corsiva", "Pristina", "Segoe UI Light", "Staccato222 BT",
 ]
-MIN_FP_FONTS_VISIBLE = 12   # červená čára: pod tímhle začíná detekce (ověřeno)
+MIN_FP_FONTS_VISIBLE = 12   # Verified lower bound before detection rises.
 
 
 def _assert_fp_font_budget(hidden, idx):
-    """Pojistka proti opakování `office` chyby: po skrytí musí ve FP.com `fonts` poli
-    zbýt >= MIN_FP_FONTS_VISIBLE rodin. Chrání před implauzibilně řídkým font setem
-    (= hlavní tampering tell font osy). Selže při generování, ne až v gate.
-
-    Počítá se proti REÁLNÉMU inventáři hosta (host_fp_probed_present), ne proti
-    statické konstantě — na stroji, kde část těch rodin není nainstalovaná, byl by
-    statický výpočet nadhodnocený a rozpočet by se tiše prorazil. Když je host sám
-    pod čarou, font-hiding je vypnutý (font_hiding_enabled) a guard se nespouští —
-    za inventář stroje profil nemůže."""
+    """Enforce the minimum visible FP.com font budget against host inventory."""
     probed = host_fp_probed_present()
     hidden_lc = {f.lower() for f in hidden}
     visible = [f for f in probed if f.lower() not in hidden_lc]
@@ -947,16 +741,12 @@ def _assert_fp_font_budget(hidden, idx):
     return len(visible)
 
 
-# --- CreepJS marker fonty (getWindows()) -----------------------------------------
-# CreepJS neodvozuje verzi Windows z UA, ale z FONTŮ (src/fonts/index.ts):
+# --- CreepJS marker fonts (getWindows()). ---------------------------------------
+# CreepJS derives the Windows version from fonts rather than UA:
 #   fontVersion = { '11': map['11'].find(x => fonts.includes(x)), ... }
 #   hash '10,7,8,8.1' -> "Windows 10"
-# Skupiny 11/10/8.1/8 používají .find() => stačí, aby ZBYL JEDEN font ze skupiny.
-# Skupina '7' používá .filter().length == len => musí zbýt VŠECHNY.
-# Když hash nesedí na žádný klíč hashMapy, getWindows() vrátí undefined = OS verze
-# nedetekovatelná z fontů, což je pro Windows stroj anomálie.
-# Dnes to drží jen NÁHODOU (CORE_NEVER_HIDE shodou okolností kryje aspoň jeden font
-# v každé skupině) — tenhle guard z toho dělá vynucenou invariantu.
+# Groups 11/10/8.1/8 require any marker and group 7 requires all markers. Keep
+# applicable groups detectable so getWindows() never returns an anomalous undefined.
 CREEPJS_WIN_FONT_MARKERS = {
     "11": ["Segoe Fluent Icons"],
     "10": ["HoloLens MDL2 Assets", "Segoe MDL2 Assets", "Bahnschrift", "Ink Free"],
@@ -964,19 +754,14 @@ CREEPJS_WIN_FONT_MARKERS = {
     "8": ["Aldhabi", "Gadugi", "Myanmar Text", "Nirmala UI"],
     "7": ["Cambria Math", "Lucida Console"],
 }
-# Hlídat se dají jen skupiny, které host REÁLNĚ má: na Win10 se '11' nedetekuje
-# (Segoe Fluent Icons chybí) a přidat font neumíme; na Win11 stroji je to naopak.
-# Konstanty níže jsou fallback pro případ, že probe nenese font inventář — jinak se
-# skupiny odvozují z hosta (creepjs_win_groups()).
+# Guard only groups actually present on the host; fonts can be hidden, not added.
+# Constants provide a fallback for measurements without font inventory.
 CREEPJS_WIN_GROUPS_ANY = ("10", "8.1", "8")
 CREEPJS_WIN_GROUPS_ALL = ("7",)
 
 
 def creepjs_win_groups():
-    """(any_groups, all_groups) podle toho, co host reálně má. `any` skupina se hlídá,
-    jen když z ní host aspoň jednu rodinu má; `all` skupina jen když má všechny —
-    jinak by guard vynucoval detekovatelnost něčeho, co ani na nemaskovaném stroji
-    detekovat nejde."""
+    """Return applicable CreepJS any-marker and all-marker host groups."""
     markers = ((host_info() or {}).get("fonts") or {}).get("creepjs_markers")
     if not markers:
         return CREEPJS_WIN_GROUPS_ANY, CREEPJS_WIN_GROUPS_ALL
@@ -987,8 +772,7 @@ def creepjs_win_groups():
 
 
 def _assert_creepjs_win_markers(hidden, idx):
-    """Každá CreepJS marker skupina musí zůstat detekovatelná, jinak getWindows()
-    vrátí undefined a Windows stroj bez zjistitelné verze OS je tell."""
+    """Require every applicable CreepJS Windows group to remain detectable."""
     hidden_lc = {f.lower() for f in hidden}
     any_groups, all_groups = creepjs_win_groups()
     for group in any_groups:
@@ -1008,16 +792,12 @@ def _assert_creepjs_win_markers(hidden, idx):
 
 
 def _bundle_is_hidden(seed, key, hide_prob):
-    """Deterministicky per-profil A per-balíček: je tento balíček u tohoto profilu
-    'nenainstalovaný' (skrytý)? Práh = hide_prob (prevalence absence software).
-    Viz _seed_frac."""
+    """Decide deterministically whether a profile lacks a software bundle."""
     return _seed_frac(seed, f"font:{key}") < hide_prob
 
 
 def pick_optional_hidden(seed):
-    """Per-profil skryté OPTIONAL (ne-jazykové) rodiny z OPTIONAL_FONT_BUNDLES dle
-    prevalence. Ortogonální k CJK balíčkům (pick_hidden_fonts) i edgingu.
-    Balíčky, které host nemá, se přeskakují (skrytí by bylo no-op)."""
+    """Choose optional non-language font bundles by absence prevalence."""
     if not font_hiding_enabled():
         return []
     hidden = []
@@ -1027,28 +807,12 @@ def pick_optional_hidden(seed):
     return hidden
 
 
-# ── Speech voices = osa D (hide-only, stejná mechanika jako fonty) ────────────
-# speechSynthesis.getVoices() vrací na Windows SAPI hlasy hostitele — bez maskování
-# je identický u všech profilů na jednom stroji = cross-profile linker. Skrýváme
-# per-profil koherentní podmnožinu ("tenhle stroj nemá nainstalovaný ten jazykový
-# balíček hlasů") — na reálném Windows je to běžný stav, tedy on-manifold.
-#
-# POZOR na dvě věci, které tuhle osu odlišují od fontů:
-#  1) MATCHOVÁNÍ JE PODŘETĚZCOVÉ, ne přesné. Chrome hlásí jméno včetně locale
-#     přípony — "Microsoft David - English (United States)" — kdežto konfigurace
-#     nese jen stabilní prefix "Microsoft David". Přesná shoda jako u fontů by
-#     nikdy nesedla → C++ IsVoiceHidden dělá case-insensitive `contains`.
-#  2) ENUMEROVAT HLASY HOSTA MUSÍŠ PŘES CHROME, ne přes SAPI5. Dotaz přes .NET
-#     System.Speech vrací na tomhle stroji jen 2 hlasy (David/Zira "Desktop"),
-#     ale Chrome jich hlásí 4 — bere i OneCore hlasy (klíč Speech_OneCore), které
-#     klasické SAPI5 nevidí: Microsoft Jakub (cs-CZ), David, Mark, Zira (en-US).
-#     ZMĚŘENO na out/Dev, ne odhad. Kdo se spolehne na System.Speech, podcení
-#     rozsah osy a hlavně přehlédne, že český hlas TU JE (a je default) — proto
-#     je locale guard v pick_hidden_voices reálná ochrana, ne no-op.
-# Neexistující hlas skrýt = no-op, stejně jako u fontů → seznam degraduje
-# graceful napříč stroji.
+# --- Speech voices: a hide-only axis analogous to fonts. ---
+# Configuration stores stable name prefixes, so native matching is case-insensitive
+# substring matching. Chrome must enumerate SAPI and OneCore voices; System.Speech
+# alone is incomplete. Missing voices are a harmless no-op.
 SPEECH_VOICE_BUNDLES = [
-    # en-US Desktop hlasy jsou samostatné instalace → hideable jednotlivě.
+    # en-US desktop voices are separate installations and can be hidden individually.
     ("en-us-david", ["Microsoft David"], 0.35),
     ("en-us-zira", ["Microsoft Zira"], 0.30),
     ("en-us-mark", ["Microsoft Mark"], 0.40),
@@ -1067,7 +831,7 @@ SPEECH_VOICE_BUNDLES = [
     ("cs", ["Microsoft Jakub"], 0.50),
 ]
 
-# Jazyk → klíč balíčku, kvůli locale koherenci (viz pick_hidden_voices).
+# Language -> bundle key for locale coherence.
 _VOICE_LANG_TO_BUNDLE = {
     "cs": ("cs",), "de": ("de",), "fr": ("fr",), "es": ("es",), "it": ("it",),
     "ru": ("ru",), "pl": ("pl",), "ja": ("ja",), "zh": ("zh",), "ko": ("ko",),
@@ -1077,23 +841,17 @@ _VOICE_LANG_TO_BUNDLE = {
 
 
 def pick_hidden_voices(seed, languages):
-    """Per-profil skryté hlasy dle prevalence (klíč "speech:<balíček>").
+    """Choose hidden voices by prevalence while preserving claimed locales.
 
-    GUARD 1 (locale koherence): balíček jazyka, který profil claimuje v
-    locale.languages, se NIKDY neskrývá — profil s cs-CZ, který nemá český hlas,
-    zatímco stroj ho má, je nekoherence. (Na hostu bez toho hlasu je to stejně
-    no-op.) U angličtiny se chrání jen tak, aby nezmizely VŠECHNY en balíčky.
-
-    GUARD 2 (nikdy neskrýt vše) je AUTORITATIVNĚ v C++ na call-site — jen tam je
-    znám skutečný seznam hlasů hostitele. Tady ho nelze spolehlivě vynutit,
-    protože generátor neví, které hlasy cílový stroj má. Viz speech_synthesis_impl.cc."""
+    Native C++ prevents hiding every actual host voice because only that call site
+    sees the complete list.
+    """
     protected = set()
     for lang in languages or []:
         primary = lang.split("-")[0].lower()
         keys = _VOICE_LANG_TO_BUNDLE.get(primary, ())
         if primary == "en":
-            # u angličtiny chráníme jen jeden balíček (aby aspoň jeden en hlas zbyl),
-            # jinak by en profily neměly na téhle ose žádnou diverzitu
+            # Preserve one English bundle while retaining diversity among the others.
             protected.add(keys[0] if keys else None)
         else:
             protected.update(keys)
@@ -1109,8 +867,7 @@ def pick_hidden_voices(seed, languages):
 
 
 def _assert_no_core_in_bundles():
-    """Pojistka (pravidlo 8): žádný skrývatelný balíček nesmí obsahovat core/web-safe
-    rodinu. Selže hlasitě při generování, ne až za běhu prohlížeče."""
+    """Fail if any hideable bundle contains a core or web-safe family."""
     all_bundles = [(k, f) for (k, f) in FONT_BUNDLES] + \
                   [(k, f) for (k, f, _p) in OPTIONAL_FONT_BUNDLES]
     for key, fonts in all_bundles:
@@ -1121,24 +878,18 @@ def _assert_no_core_in_bundles():
 
 
 def random_seed():
-    """Nový náhodný 256-bit hex seed (profile_id) pro ČERSTVÝ profil. Všechny
-    per-profil osy z něj vycházejí DETERMINISTICKY (pravidlo 8) — náhodný je jen
-    samotný seed, ne per-session šum. 64 hex znaků == stejný formát jako
-    base_profile_id v profiles.json (seed-slice jdou do [58:62])."""
+    """Return a new 256-bit seed; every profile axis derives from it deterministically."""
     return secrets.token_hex(32)
 
 
 def make_profile(ref, idx, seed=None, gpu_mode=None):
-    """seed=None → použij base_profile_id z reference (deterministický, sticky
-    profil jako doteď). seed=<hex> → čerstvý náhodný profil (launcher bez čísla).
-    gpu_mode: off|family|common|all (None = default_gpu_mode()). Karta se vybírá
-    DETERMINISTICKY ze seedu, takže je per-profil stabilní a napříč profily různá."""
+    """Build a deterministic profile from its reference ID or a fresh explicit seed."""
     nav = ref["browser_data"]["navigator"]
     if seed is None:
         seed = ref["base_profile_id"]
     label = f"profile_{idx:02d}"
     full_version = pick_chrome_version(seed)
-    # Per-profil GPU template dle režimu (FP_GPU_TEMPLATE ji přebíjí na jednu kartu).
+    # Choose a per-profile template; FP_GPU_TEMPLATE overrides the mode.
     _gpu_block = gpu_block_for(seed, gpu_mode or default_gpu_mode())[1]
     _host_gl = host_webgl()
     prof = {
@@ -1150,8 +901,7 @@ def make_profile(ref, idx, seed=None, gpu_mode=None):
             **build_ua_ch(full_version),
         },
         "hardware": {
-            # Per-profil soft osy (seed-driven distribuce). hwConc <= reálných 16,
-            # deviceMemory <= spec cap 8 (reálná RAM 20GB stejně hlásí 8).
+            # Seed-driven soft axes stay below measured/specification ceilings.
             "hardware_concurrency": pick_hwconc(seed),
             "device_memory": pick_devmem(seed),
         },
@@ -1160,101 +910,74 @@ def make_profile(ref, idx, seed=None, gpu_mode=None):
             "accept_language": DEFAULT_LOCALE["accept_language"],
         },
         "timezone": DEFAULT_LOCALE["timezone"],
-        # Screen: per-profil rozlišení + koherentní okno (viz pick_screen). dpr a
-        # color_depth pinnuté na reálný host.
+        # Per-profile resolution/window; pin DPR and color depth to the host.
         "screen": pick_screen(seed),
-        # prefers-color-scheme (A1): čistá per-profil osa dark|light. C++ override
-        # v prohlížečovém procesu (WebPreferences::preferred_color_scheme) → media
-        # dotaz i StyleEngine rendering koherentní. Viz pick_color_scheme.
+        # Native color-scheme selection keeps media queries and rendering coherent.
         "media": {
             "color_scheme": pick_color_scheme(seed),
-            # media zařízení (A2): per-profil cap (hide-only) na webkameru/mikrofon.
-            # C++ jen snižuje reálný počet, nikdy nefabrikuje. Viz pick_media_devices.
+            # Hide-only device caps; native C++ never fabricates hardware.
             "devices": pick_media_devices(seed),
         },
-        # GPU (režim --gpu, viz gpu_pool/pick_gpu_template):
-        #  - off:    name-rotace v rámci reálné host device ID (jen na AMD gcn-4 hostu,
-        #            jinak host renderer beze změny) → koherentní, žádný gpu blok.
-        #  - jinak:  top-level webgl.* se drží HOST (bezpečný fallback pro případ, že
-        #            C++ gpu blok neprojde validací) a per-profil identita jde do
-        #            atomického "gpu" bloku níže (WebGL+WebGPU spolu, ParseGpuBlock).
+        # `off` uses safe host name rotation. Other modes add an atomic GPU block
+        # while retaining top-level webgl as the coherent host fallback.
         "webgl": {
             "vendor": _host_gl["vendor"],
             "renderer": (_host_gl["renderer"] if _gpu_block
                          else pick_webgl_renderer(seed)),
         },
-        # Canvas/audio noise: per-profil unikátnost přes deterministický šum
-        # (seed z profile_id). DEFAULT VYPNUTO — naivní šum byl silně detekován
-        # (viz paměť canvas-audio-noise-detected); zapíná se jen experimentálně
-        # editací JSON (C++ čte za běhu, bez rebuildu). Konzistence napříč všemi
-        # readback API (getImageData/toDataURL/toBlob; getChannelData/
-        # copyFromChannel) je nutná, jinak = tampering tell.
+        # Deterministic canvas/audio noise stays disabled because it was detected.
+        # Any experiment must remain consistent across every readback API.
         "canvas": {
             "noise": {
                 "enabled": False,
-                "mode": "variance_gamma",  # variance_gamma (hrany+gamma) | additive | micro (diagnostic 1px)
-                "density_bits": 3,   # perturbuj 1 z 2^3 pixelů (jen additive)
-                "magnitude": 1,      # ±1 na kanál (jen additive)
-                "webgl": False,      # readPixels zatím nepokryt
+                "mode": "variance_gamma",  # Edges+gamma | additive | diagnostic 1px micro.
+                "density_bits": 3,   # Perturb one in 2^3 pixels additively.
+                "magnitude": 1,      # Additive ±1 per channel.
+                "webgl": False,      # readPixels is not covered yet.
             },
         },
         "audio": {
             "noise": {
                 "enabled": False,
-                "mantissa_bits": 3,  # přepiš spodní 3 mantisové bity
+                "mantissa_bits": 3,  # Replace the lowest three mantissa bits.
             },
             "reference_sum": ref["browser_data"].get("audio_fingerprint_sum"),
         },
-        # Speech voices (osa D): per-profil "nenainstalované" balíčky SAPI hlasů.
-        # Hide-only, podřetězcové matchování, guard proti vyprázdnění je v C++ na
-        # call-site (jen tam je znám reálný seznam). Viz pick_hidden_voices.
+        # Hide-only SAPI voice bundles; native C++ prevents an empty visible list.
         "speech": {
             "hidden_voices": pick_hidden_voices(seed, DEFAULT_LOCALE["languages"]),
         },
-        # Text rendering: per-profil edging (viz pick_text_edging) — jediná ověřená
-        # čistá osa canvas/text diverzity na jednom stroji. Mění NATIVNĚ rasterizaci
-        # glyfů (Skia CreateSkFont na Windows) → jiný canvas+DOM text hash, bez
-        # tamperingu. LIMIT: text-only (geometrie canvasu zůstává hardware-pinnutá).
-        # C++ čte za běhu; edging=lcd == nativní na tomto ClearType-on hostu.
+        # Native text edging changes glyph rasterization without changing geometry.
         "text": {
             "render": {
                 "enabled": True,
                 "edging": pick_text_edging(seed),  # lcd | grayscale | alias
-                "hinting": "keep",   # no-op na Windows (DWrite ignoruje) — needit
-                "subpixel": "keep",  # držet koherentní; off při LCD = tampering tell
+                "hinting": "keep",   # DWrite ignores hinting on Windows; do not alter it.
+                "subpixel": "keep",  # Preserve coherence; LCD with off is detectable.
             },
         },
-        # Font hiding: per-profil koherentní podmnožina optional fontů "chybí"
-        # (viz pick_hidden_fonts) — druhá čistá osa. Rozbije font-enumeration linker
-        # a zároveň diverzifikuje canvas hash tam, kde text propadne fallbackem přes
-        # skrytou rodinu. C++ FontCache čte za běhu; prázdný list = nativní.
+        # Coherent optional-font subsets diversify enumeration and fallback text.
         "fonts": {
-            # CJK/regionální balíčky (pick_hidden_fonts) + rozšířený optional pool
-            # (pick_optional_hidden: Office symboly, Corel/BT, HP, dev, webfonty,
-            # Segoe handwriting). Obojí koherentní per-profil ze seedu.
+            # Combine CJK/regional bundles with the conservative optional pool.
             "hidden": pick_hidden_fonts(seed) + pick_optional_hidden(seed),
         },
-        "proxy": None,   # doplní launcher (index + geo) pokud je proxy
+        "proxy": None,   # Launcher adds proxy index and GeoIP when applicable.
         "user_data_dir": paths.profile_user_data_dir(label),
     }
-    # Atomický cross-vendor GPU blok (jen když je aktivní šablona). C++ ParseGpuBlock
-    # ho validuje celý-nebo-nic; při nevalidě padne na host webgl + nativní webgpu.
+    # Native C++ validates a cross-vendor GPU block atomically and falls back to host.
     if _gpu_block:
         prof["gpu"] = _gpu_block
     return prof
 
 
-# --- Preflight (5.5): předpoklady o cílovém stroji ------------------------------
-# Jedno místo, jedna hláška. Kontroluje se to, co maskování neumí zachránit — když
-# je porušené, nemá smysl profily vůbec generovat.
-WIN_MIN_BUILD = 17763          # Windows 10 1809 = minimum pro Chrome 149
+# --- Target-machine preflight. ---
+# Centralize invariants that masking cannot safely repair.
+WIN_MIN_BUILD = 17763          # Windows 10 1809 is Chrome 149's minimum.
 _PREFLIGHT = {"done": False}
 
 
 def preflight(strict=True):
-    """Ověří, že tenhle stroj je podporovaná cílová konfigurace. Volá se jednou
-    za běh (z build_profile). `FP_ALLOW_HOST=1` degraduje chyby na varování —
-    jen pro diagnostiku, ne pro produkci."""
+    """Verify the host configuration; FP_ALLOW_HOST is for diagnostics only."""
     if _PREFLIGHT["done"]:
         return
     _PREFLIGHT["done"] = True
@@ -1270,9 +993,7 @@ def preflight(strict=True):
         problems.append(f"Windows build {build} < {WIN_MIN_BUILD} (Windows 10 1809); "
                         f"Chrome 149 will not start there.")
 
-    # dpr != 1.0 (HiDPI) NENÍ důvod k odmítnutí — změřeno 2026-07-26, viz
-    # hidpi_scale_flags(). Launcher takový host srovná na dpr 1.0 a otisk je pak
-    # bit po bitu shodný s během při 100% škálování. Jen o tom řekneme nahlas.
+    # HiDPI is supported: the launcher normalizes it to the verified DPR-1 baseline.
     hidpi_scale_flags(quiet=False)
 
     if (h.get("webgpu") or {}).get("is_fallback_adapter"):
@@ -1290,7 +1011,7 @@ def preflight(strict=True):
 
 
 def host_report():
-    """Jednořádkový přehled toho, z čeho generátor odvozuje policy (co je host)."""
+    """Return a one-line summary of host inputs used by profile policy."""
     h = host_require("host summary")
     s = h.get("screen") or {}
     hw = h.get("hardware") or {}
@@ -1304,31 +1025,26 @@ def host_report():
 
 
 def build_profile(ref, idx, seed=None, gpu_mode=None):
-    """Sestaví JEDEN profil a prožene ho VŠEMI pojistkami (core fonty, FP.com font
-    rozpočet, CreepJS getWindows markery). Vrací (prof, fp_visible). Jediný zdroj
-    pravdy pro generování — používá ho main() (5 sticky profilů) i launcher.py
-    (čerstvý profil bez čísla, se seed override). NEZAPISUJE na disk."""
-    preflight()   # předpoklady o stroji (dpr, fallback adaptér, verze Windows)
+    """Build one validated profile without writing it to disk."""
+    preflight()   # Host DPR, adapter, and Windows-version assumptions.
     prof = make_profile(ref, idx, seed=seed, gpu_mode=gpu_mode)
-    # Hlasy: aspoň jeden balíček musí zůstat viditelný. Dnes to drží z konstrukce
-    # (locale-chráněné balíčky se nikdy neskrývají), ale kdyby někdo tu ochranu
-    # rozvolnil, ať to spadne tady a ne až v prohlížeči s prázdným getVoices().
+    # At least one voice bundle must remain visible.
     _hidden_voices = prof["speech"]["hidden_voices"]
     _all_voices = [v for _, vs, _ in SPEECH_VOICE_BUNDLES for v in vs]
     assert len(_hidden_voices) < len(_all_voices), (
         f"profile {idx}: every voice bundle is hidden -> empty getVoices()")
-    # belt-and-suspenders: žádný core font nesmí propadnout do hidden listu
+    # Belt and suspenders: no core font may reach the hidden list.
     bad = [f for f in prof["fonts"]["hidden"] if f.lower() in CORE_NEVER_HIDE]
-    assert not bad, f"profile {idx}: core font ve hidden listu: {bad}"
-    # magnitude strop: ve FP.com fonts poli musí zbýt dost rodin (viz office rollback)
+    assert not bad, f"profile {idx}: core font in hidden list: {bad}"
+    # Enforce the font-hiding magnitude ceiling.
     fp_visible = _assert_fp_font_budget(prof["fonts"]["hidden"], idx)
-    # CreepJS getWindows(): každá marker skupina musí zůstat detekovatelná
+    # Keep every applicable CreepJS Windows marker group detectable.
     _assert_creepjs_win_markers(prof["fonts"]["hidden"], idx)
     return prof, fp_visible
 
 
 def _short_renderer(renderer):
-    """Krátký název karty z ANGLE stringu — host-nezávisle (ne jen 'Radeon')."""
+    """Extract a short adapter name from an ANGLE renderer string."""
     m = re.search(r"ANGLE \([^,]+, (.+?) \(0x", renderer or "")
     if m:
         return m.group(1)
@@ -1336,7 +1052,7 @@ def _short_renderer(renderer):
 
 
 def profile_summary(path, prof, fp_visible):
-    """Jednořádkový přehled vygenerovaného profilu (sdílí main() i launcher)."""
+    """Return a one-line generated-profile summary shared by both entry points."""
     s = prof["screen"]
     return (f"[ok] {path}  id={prof['profile_id'][:12]} "
             f"hwConc={prof['hardware']['hardware_concurrency']} "
@@ -1351,8 +1067,7 @@ def profile_summary(path, prof, fp_visible):
 
 
 def parse_gpu_arg(argv, default=DEFAULT_GPU_MODE):
-    """--gpu {off|family|common|all} ze surového argv (sdílí launcher i generátor).
-    Podporuje '--gpu X' i '--gpu=X'. Jediný zdroj pravdy pro GPU_MODES/default."""
+    """Parse either raw --gpu argument form using the shared mode definitions."""
     for i, a in enumerate(argv):
         if a.startswith("--gpu="):
             val = a.split("=", 1)[1]
@@ -1370,7 +1085,7 @@ def parse_gpu_arg(argv, default=DEFAULT_GPU_MODE):
 
 def main():
     paths.initialize_runtime_state()
-    _assert_no_core_in_bundles()   # pojistka: žádný core font ve skrývatelných balíčcích
+    _assert_no_core_in_bundles()   # No hideable bundle may contain a core font.
     preflight()
     gpu_mode = parse_gpu_arg(sys.argv, default=default_gpu_mode())
     print(host_report())

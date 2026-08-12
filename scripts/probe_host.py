@@ -34,31 +34,29 @@ import browser3_paths as paths
 
 CACHE = paths.HOST_CACHE_FILE
 
-# Verze schématu cache. Zvýšení = stará cache je neplatná a proboduje se znovu
-# (v1 = jen GPU + screen, bez `version` klíče).
+# Cache schema version. Incrementing it invalidates and re-probes older caches.
+# Version 1 contained only GPU and screen data and had no `version` key.
 SCHEMA_VERSION = 2
 
 
 def _launcher():
-    """LAZY import launcheru (chrome_exe_path/parse_build_arg = jediný zdroj pravdy pro
-    buildy). Nesmí být na úrovni modulu: launcher importuje generate_profiles a ten
-    volá load_cache() už při importu → cyklický import by tiše vypnul detekci hosta."""
+    """Import launcher lazily without creating the profile-generator import cycle."""
     import launcher as L
     return L
 
 
 def _gp():
-    """LAZY import generátoru (font seznamy = jediný zdroj pravdy). Stejná past jako
-    u _launcher(): generate_profiles při importu čte cache tohohle modulu."""
+    """Import the generator lazily; its font lists are the source of truth."""
     import generate_profiles as G
     return G
 
 
 def font_candidates():
-    """Kandidátní familiesy k proměření = sjednocení všech seznamů, se kterými generátor
-    pracuje (FP.com probe list ∪ jazykové balíčky ∪ optional balíčky ∪ CreepJS markery).
-    Když se seznamy v generátoru změní, je potřeba probe zopakovat (--force) — nová
-    familiesa by jinak vypadala jako nepřítomná (bezpečný směr: balíček se nepoužije)."""
+    """Return the union of every font-family list consumed by the generator.
+
+    When these lists change, `--force` must re-run the probe. Otherwise a newly
+    added family appears absent, safely disabling the corresponding bundle.
+    """
     G = _gp()
     fams = set(G.FP_PROBED_FONTS)
     for _key, fonts in G.FONT_BUNDLES:
@@ -67,16 +65,14 @@ def font_candidates():
         fams.update(fonts)
     for fonts in G.CREEPJS_WIN_FONT_MARKERS.values():
         fams.update(fonts)
-    # Core familiesy přidáváme taky — ne kvůli skrývání (to je zakázané), ale aby šlo
-    # poznat „font-chudý stroj" (chybí i to, co má mít každý Windows).
+    # Include core families to identify a font-poor host, never to hide them.
     fams.update(["Arial", "Times New Roman", "Courier New", "Segoe UI", "Tahoma",
                  "Verdana", "Calibri", "Consolas"])
     return sorted(fams)
 
 
 def font_candidates_hash(cands=None):
-    """Otisk kandidátního seznamu — generátor podle něj pozná, že se font seznamy
-    od posledního probu změnily (a že je tedy potřeba `--force`)."""
+    """Fingerprint the candidate list so generator changes invalidate the probe."""
     cands = cands if cands is not None else font_candidates()
     return hashlib.sha256("\n".join(cands).encode("utf-8")).hexdigest()[:12]
 
@@ -225,19 +221,17 @@ class _Handler(BaseHTTPRequestHandler):
 
 
 def machine_id():
-    """Otisk stroje — při neshodě se cache zahodí a proboduje znovu."""
+    """Fingerprint the machine; a mismatch invalidates and repeats the probe."""
     return f"{platform.node()}|{platform.machine()}|{platform.processor()}"
 
 
 def machine_slug():
-    """Krátký stabilní identifikátor stroje pro názvy adresářů (per-machine baseline).
-    Hash, ne surové jméno — do gitu se tak nedostane hostname."""
+    """Return a short stable hash for per-machine directory names, never the hostname."""
     return hashlib.sha256(machine_id().encode("utf-8")).hexdigest()[:12]
 
 
 def host_os():
-    """OS hostitele z Pythonu (spolehlivější než UA-CH platformVersion, které je
-    mapované na UniversalApiContract, ne na build number)."""
+    """Read the host OS from Python, avoiding UA-CH's mapped contract version."""
     info = {"product": platform.system(), "version": platform.version(),
             "release": platform.release()}
     if platform.system() == "Windows":
@@ -255,8 +249,7 @@ def host_os():
 
 
 def load_cache():
-    """Vrací cache dictu, jen když sedí na TENHLE stroj A na aktuální schema; jinak
-    None (v1 cache bez `version` je tím pádem neplatná a proboduje se znovu)."""
+    """Return cached data only for this machine and the current schema."""
     paths.initialize_runtime_state()
     if not os.path.isfile(CACHE):
         return None
@@ -273,8 +266,7 @@ def load_cache():
 
 
 def _font_summary(present):
-    """Odvozené pohledy na inventář (pro report a rychlé guardy v generátoru).
-    Autoritativní zůstává `present` — generátor si politiku počítá sám z něj."""
+    """Derive reporting and guard views; `present` remains authoritative."""
     G = _gp()
     pres = {f.lower() for f in present}
     bundles = ([(k, f) for k, f in G.FONT_BUNDLES] +
@@ -283,15 +275,14 @@ def _font_summary(present):
         "fp_probed_present": [f for f in G.FP_PROBED_FONTS if f.lower() in pres],
         "optional_present": {k: any(f.lower() in pres for f in fonts)
                              for k, fonts in bundles},
-        # per skupina seznam PŘÍTOMNÝCH markerů — generátor z toho odvodí ANY/ALL
-        # pravidla CreepJS getWindows() (skupina '7' vyžaduje všechny).
+        # Present markers per group let the generator derive CreepJS ANY/ALL rules.
         "creepjs_markers": {g: [f for f in fonts if f.lower() in pres]
                             for g, fonts in G.CREEPJS_WIN_FONT_MARKERS.items()},
     }
 
 
 def probe(build=None, timeout=90, quiet=False):
-    """Spustí nativní chrome, vrátí dict (a zapíše cache). Vyhazuje RuntimeError."""
+    """Run native Chrome, persist and return measurements, or raise RuntimeError."""
     L = _launcher()
     build = build or L.DEFAULT_BUILD
     exe = L.chrome_exe_path(build)
@@ -307,7 +298,7 @@ def probe(build=None, timeout=90, quiet=False):
     udd = tempfile.mkdtemp(prefix="fp_hostprobe_")
     proc = None
     try:
-        # NATIVNÍ běh: žádné --fp-profile-config/--fp-profile-data → nulové maskování.
+        # Native run: no profile switches and therefore no masking.
         cmd = [exe, f"--user-data-dir={udd}", "--no-first-run", "--no-default-browser-check",
                "--disable-sync", "--window-size=520,400", f"http://127.0.0.1:{port}/"]
         proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -347,13 +338,12 @@ def probe(build=None, timeout=90, quiet=False):
         "machine_slug": machine_slug(),
         "probed_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
         "build": build,
-        # Zkratky, které konzumuje generate_profiles (host_webgl / gpu_pool):
+        # Convenience views consumed by generate_profiles (host_webgl / gpu_pool).
         "webgl": {"vendor": gl.get("unmaskedVendor"), "renderer": gl.get("unmaskedRenderer")},
         "webgpu": {"vendor": wg.get("vendor"), "architecture": wg.get("architecture"),
                    "subgroup_min_size": wg.get("subgroupMinSize"),
                    "subgroup_max_size": wg.get("subgroupMaxSize"),
-                   # SwiftShader/fallback adaptér = sám o sobě VM/tampering tell
-                   # (paměť angle-backend-switch-vm-tell) → preflight na to reaguje.
+                   # A SwiftShader/fallback adapter is itself a VM/tampering signal.
                    "is_fallback_adapter": bool(wgpu.get("isFallbackAdapter"))},
         "screen": {
             "width": scr.get("width"), "height": scr.get("height"),
@@ -361,14 +351,13 @@ def probe(build=None, timeout=90, quiet=False):
             "color_depth": scr.get("colorDepth"), "pixel_depth": scr.get("pixelDepth"),
             "device_pixel_ratio": scr.get("devicePixelRatio"),
             "is_extended": scr.get("isExtended"),
-            # v1 názvy (colorDepth/…) si necháváme pro zpětnou čitelnost starých nástrojů
+            # Retain v1 names for backward compatibility with older tools.
             "colorDepth": scr.get("colorDepth"), "pixelDepth": scr.get("pixelDepth"),
             "devicePixelRatio": scr.get("devicePixelRatio"),
         },
         "hardware": {
             "hardware_concurrency": hw.get("hardwareConcurrency"),
-            # nativní bucket z prohlížeče (Chromium sám clampuje na spec hodnoty),
-            # NE reálná RAM z WMI — web vidí právě tohle
+            # Browser-native bucket already clamped to spec, not physical WMI RAM.
             "device_memory": hw.get("deviceMemory"),
             "platform": hw.get("platform"),
             "max_touch_points": hw.get("maxTouchPoints"),
@@ -383,7 +372,7 @@ def probe(build=None, timeout=90, quiet=False):
                           if isinstance(v, dict) and v.get("name")],
         "locale": data.get("locale") or {},
         "os": host_os(),
-        # Plný dump pro audit/clamp:
+        # Full dump for auditing and clamping.
         "raw": data,
     }
     if not out["webgl"]["renderer"] or not out["webgpu"]["vendor"]:
@@ -398,7 +387,7 @@ def probe(build=None, timeout=90, quiet=False):
 
 
 def _display_path(path, root=ROOT):
-    """Vrať čitelnou cestu i tehdy, když cache a instalace leží na jiných discích."""
+    """Return a readable path even when cache and installation use different drives."""
     try:
         return os.path.relpath(path, root)
     except ValueError:
@@ -406,7 +395,7 @@ def _display_path(path, root=ROOT):
 
 
 def print_summary(d):
-    """Lidský přehled toho, co se na stroji naměřilo (co uvidí generátor)."""
+    """Return a human-readable summary of measurements visible to the generator."""
     s = d.get("screen") or {}
     hw = d.get("hardware") or {}
     fo = d.get("fonts") or {}
@@ -437,7 +426,7 @@ def print_summary(d):
 
 
 def get_host(build=None, quiet=True):
-    """Cache-first přístup pro ostatní moduly. None, když probe není k dispozici."""
+    """Cache-first entry point for other modules; return None when unavailable."""
     d = load_cache()
     if d:
         return d

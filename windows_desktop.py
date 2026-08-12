@@ -100,7 +100,7 @@ if os.name == "nt":
 
 
 class DesktopProcess:
-    """Malý Popen-kompatibilní obal nad procesem vytvořeným přes CreateProcessW."""
+    """Small Popen-compatible wrapper for a process created by CreateProcessW."""
 
     def __init__(self, handle, pid):
         self._handle = handle
@@ -171,7 +171,7 @@ class DesktopProcess:
 
 
 class IsolatedDesktop:
-    """Vlastní jeden WinSta0 desktop a udržuje jej živý po dobu browser session."""
+    """Own one WinSta0 desktop and keep it alive for the browser session."""
 
     def __init__(self, name, handle):
         self.name = name
@@ -210,7 +210,7 @@ class IsolatedDesktop:
         return DesktopProcess(process_info.hProcess, process_info.dwProcessId)
 
     def windows(self):
-        """Diagnostický snapshot oken na tomto desktopu; desktop nepřepíná."""
+        """Return a diagnostic window snapshot without switching desktops."""
         result = []
 
         @ENUMWINDOWSPROC

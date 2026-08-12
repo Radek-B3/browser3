@@ -43,21 +43,20 @@ import urllib.request
 import browser3_paths as paths
 from proxy_forwarder import ForwarderConfig, ProxyForwarder
 from socks5_forwarder import Socks5Config, Socks5Forwarder, socks5_open_connect
-from generate_profiles import FONT_BUNDLES  # single source of truth pro locale-aware fonty
-import generate_profiles as gp  # generování čerstvého profilu (bez čísla profilu)
+from generate_profiles import FONT_BUNDLES  # source of truth for locale-aware fonts
+import generate_profiles as gp  # fresh profile generation without a profile number
 from windows_desktop import IsolatedDesktop
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 PROFILES_DIR = paths.PROFILES_DIR
 PROXY_FILE = os.path.join(ROOT, "proxy.txt")          # READ-ONLY
-MAPPING_FILE = paths.PROXY_MAP_FILE  # persistentní sticky vazba
+MAPPING_FILE = paths.PROXY_MAP_FILE  # persistent sticky assignment
 PACKAGED_RUNTIME_DIR = os.path.join(ROOT, "runtime")
 OUT_DIR = os.path.join(ROOT, "chromium_fork", "chromium", "src", "out")
-# Build adresáře (out/<název>/chrome.exe), volitelné přes --build:
-#   Release  = produkční/validační build (is_component_build=false) — DEFAULT, na něm
-#              se VŽDY dělá finální validace otisku (pravidlo: component build se může chovat jinak),
-#   Release2 = druhý produkční out dir (A/B porovnání dvou buildů),
-#   Dev      = component build (rychlá iterace, mnoho malých DLL) — JEN pro vývoj, ne pro validaci.
+# Build directories (out/<name>/chrome.exe), selectable with --build:
+#   Release  = default production build and the only final-validation target.
+#   Release2 = second production output for A/B build comparisons.
+#   Dev      = fast component build for development only.
 BUILD_DIRS = ("Release", "Release2", "Dev")
 DEFAULT_BUILD = "Release"
 CONTROL_MODES = ("none", "cdp")
@@ -66,15 +65,15 @@ DEVTOOLS_ACTIVE_PORT = "DevToolsActivePort"
 
 
 class ProfileInUseError(RuntimeError):
-    """Persistentní profil už drží jiný launcher/agent proces."""
+    """Another launcher or agent process already owns the persistent profile."""
 
 
 class BrowserStartError(RuntimeError):
-    """Chrome se nepodařilo spustit nebo připravit v časovém limitu."""
+    """Chrome failed to start or become ready before the timeout."""
 
 
 class ProfileLock:
-    """Malý mezisprocesový OS lock svázaný s persistentním user-data-dir."""
+    """Small inter-process OS lock bound to a persistent user-data directory."""
 
     def __init__(self, user_data_dir):
         self.path = os.path.join(user_data_dir, ".browser3-profile.lock")
@@ -118,7 +117,7 @@ class ProfileLock:
 
 
 class BrowserLaunch:
-    """Vlastnictví Chrome procesu, forwarderu, locku a CDP metadat."""
+    """Own a Chrome process, forwarder, lock, and optional CDP metadata."""
 
     def __init__(self, proc, forwarder, profile_lock, cdp_url=None,
                  devtools_active_port=None, desktop=None):
@@ -131,7 +130,7 @@ class BrowserLaunch:
         self._cleaned = False
 
     def __iter__(self):
-        # Zpětná kompatibilita pro starší `proc, forwarder = launch_one(...)`.
+        # Backward compatibility for `proc, forwarder = launch_one(...)` callers.
         yield self.proc
         yield self.forwarder
 
@@ -141,7 +140,7 @@ class BrowserLaunch:
         self._cleaned = True
         if self.forwarder:
             self.forwarder.stop()
-        # Metadata odstranit ještě pod profile lockem, aby nový start nemohl přijít o svůj soubor.
+        # Remove metadata while locked so a new launch cannot lose its file.
         if self.devtools_active_port:
             try:
                 os.remove(self.devtools_active_port)
@@ -161,7 +160,7 @@ class BrowserLaunch:
             self.cleanup()
 
     def terminate(self, timeout=10.0):
-        """Ukončí pouze Chrome proces spuštěný tímto handlem a uvolní zdroje."""
+        """Terminate only the owned Chrome process and release its resources."""
         try:
             if self.proc.poll() is None:
                 self.proc.terminate()
@@ -190,15 +189,15 @@ def chrome_exe_path(build=DEFAULT_BUILD):
     return os.path.join(OUT_DIR, build, "chrome.exe")
 
 
-CHROME_EXE = chrome_exe_path()  # default (Release) — drží zpětnou kompatibilitu importérů
+CHROME_EXE = chrome_exe_path()  # Release default retained for import compatibility
 
 
 def parse_build_arg(argv):
-    """Vytáhne --build {Release|Release2|Dev} ze surového argv — pro skripty, které
-    nepoužívají argparse (legacy callers and diagnostic tools).
-    Podporuje '--build Dev' i '--build=Dev', default DEFAULT_BUILD. Validuje proti
-    BUILD_DIRS, aby překlep spadl hned, ne až na chybějícím chrome.exe. Bydlí tady,
-    aby seznam buildů i default zůstaly na JEDNOM místě (sdílí ho i argparse níže)."""
+    """Extract --build from raw argv for legacy callers and diagnostic tools.
+
+    Accept both supported argument forms and validate early against BUILD_DIRS so
+    a typo does not surface later as a missing executable.
+    """
     allowed = ", ".join(BUILD_DIRS)
     for i, a in enumerate(argv):
         if a.startswith("--build="):
@@ -215,9 +214,9 @@ def parse_build_arg(argv):
     return DEFAULT_BUILD
 
 
-# ---------- proxy.txt parser (pravidlo Fáze 5: 3 formáty) ----------
+# ---------- proxy.txt parser (three supported formats) ----------
 def parse_proxy_line(line):
-    """Vrátí dict {host,port,user,pass} nebo None. Formáty:
+    """Return {host, port, user, pass} or None. Supported formats:
     ip:port | ip:port:user:pass | scheme://user:pass@host:port
     """
     line = line.strip()
@@ -253,7 +252,7 @@ def load_proxies():
         return out
 
 
-# ---------- sticky profil <-> proxy (stabilní napříč běhy) ----------
+# ---------- sticky profile-to-proxy assignment across runs ----------
 def load_mapping():
     return paths.load_json(MAPPING_FILE, {})
 
@@ -263,13 +262,12 @@ def save_mapping(m):
 
 
 def sticky_proxy_index(profile_id, n_proxies):
-    """Stabilní mapování profilu na proxy index (persistováno). Nerandomizuje se
-    při každém běhu — stejný visitorId z různých zemí je tell (Fáze 5).
+    """Return the profile's persistent proxy index.
 
-    Náhoda je JEN při prvním přiřazení (nový profil dostane náhodnou proxy ze
-    seznamu, aby se profily rovnoměrně rozprostřely); od té chvíle je vazba
-    zapsaná v profile_proxy_map.json a už se nemění. Pokud proxy.txt mezitím
-    ubyl na délce, uložený index se přemapuje (a přepíše), aby neukazoval mimo."""
+    Randomness is used only for the initial assignment. The mapping then remains
+    stable because one visitor ID appearing in different countries is detectable.
+    If the proxy list shrinks, remap and persist an in-range index.
+    """
     if n_proxies == 0:
         return None
     def assign(current):
@@ -283,12 +281,10 @@ def sticky_proxy_index(profile_id, n_proxies):
     return m[profile_id]
 
 
-# ---------- geo z proxy -> timezone/locale (konzistence, Tier 1) ----------
+# ---------- proxy GeoIP -> coherent time zone and locale ----------
 GEO_CACHE_FILE = paths.GEO_CACHE_FILE
 
-# země (ISO countryCode z ip-api) -> Accept-Language / navigator.languages (primární
-# regionální + bázový jazyk + en fallback, formát jako reálný Chrome). Nezná-li se země,
-# DEFAULT_LANGS. Rozšiřitelné dle potřeby.
+# ISO country code -> Accept-Language / navigator.languages in stock Chrome format.
 COUNTRY_LANGS = {
     "CZ": "cs-CZ,cs,en", "SK": "sk-SK,sk,cs,en-US,en", "DE": "de-DE,de,en-US,en",
     "AT": "de-AT,de,en-US,en", "CH": "de-CH,de,fr,en-US,en", "US": "en-US,en",
@@ -308,9 +304,7 @@ COUNTRY_LANGS = {
 }
 DEFAULT_LANGS = "en-US,en"
 
-# země (ISO) -> klíče FONT_BUNDLES, které lokální uživatel MÁ nainstalované → NESMÍ být
-# skryté (jinak nekoherence locale↔fonty: profil za JP proxy tvrdící jazyk ja-JP, ale bez
-# japonských fontů = tell). Ostatní balíčky (pro cross-profil diverzitu) zůstávají skryté.
+# ISO country -> FONT_BUNDLES expected for a local user and therefore never hidden.
 COUNTRY_KEEP_BUNDLES = {
     "JP": ["jp"], "KR": ["kr"], "CN": ["sc"],
     "TW": ["tc"], "HK": ["tc"], "MO": ["tc"],
@@ -319,9 +313,10 @@ COUNTRY_KEEP_BUNDLES = {
 
 
 def _apply_locale_fonts(profile, country):
-    """Locale-aware fonty: z profile['fonts']['hidden'] odebere rodiny odpovídající zemi proxy
-    (viz COUNTRY_KEEP_BUNDLES + FONT_BUNDLES) — reálný lokální uživatel je má. Diverzitní
-    skrývání ostatních balíčků zůstává. No-op pro země bez CJK/Indic/SEA balíčku."""
+    """Unhide font families expected in the proxy country's locale.
+
+    Other diversity bundles stay hidden. Unmapped locales are unchanged.
+    """
     keep_keys = COUNTRY_KEEP_BUNDLES.get((country or "").upper())
     if not keep_keys:
         return
@@ -338,16 +333,17 @@ def _apply_locale_fonts(profile, country):
         fonts["hidden"] = new_hidden
         profile["fonts"] = fonts
         print(f"  [fonts] locale {country}: preserved bundles {keep_keys} "
-              f"(removed {len(hidden) - len(new_hidden)} rodin z hidden)")
+              f"(removed {len(hidden) - len(new_hidden)} families from hidden)")
 
 
 def warn_locale_without_proxy(profile, geo):
-    """Bez proxy si locale/timezone neřídí geo, ale fallback (cs-CZ / Europe/Prague).
-    Na stroji s jiným OS locale by profil claimoval češtinu, zatímco ICU/Intl, formáty
-    data i SAPI hlasy zůstanou hostitelské = nekoherence. Jen VAROVÁNÍ (pravidlo 4:
-    locale OS se nemění) — řešení je buď proxy, nebo srovnat OS locale."""
+    """Warn when the no-proxy cs-CZ fallback conflicts with the host locale.
+
+    Browser3 does not change the OS locale, so ICU/Intl formats and SAPI voices
+    would otherwise conflict with the claimed profile locale.
+    """
     if geo:
-        return   # za proxy řídí locale geo (geo_from_proxy) → v pořádku
+        return   # With a proxy, GeoIP determines the locale.
     host = gp.host_info()
     hl = (host or {}).get("locale") or {}
     host_ui, host_tz = hl.get("ui"), hl.get("timezone")
@@ -356,7 +352,7 @@ def warn_locale_without_proxy(profile, geo):
     claim_tz = profile.get("timezone")
     bad = []
     if host_ui and claim_lang and host_ui.lower() != claim_lang.lower():
-        bad.append(f"jazyk {claim_lang} vs. host {host_ui}")
+        bad.append(f"language {claim_lang} vs. host {host_ui}")
     if host_tz and claim_tz and host_tz != claim_tz:
         bad.append(f"timezone {claim_tz} vs. host {host_tz}")
     if bad:
@@ -371,11 +367,11 @@ def _load_geo_cache():
 
 
 def geo_from_proxy(px):
-    """GeoIP z exit IP proxy přes ip-api.com. Dotaz jde PŘES proxy forwarder → ip-api uvidí
-    proxy exit IP a vrátí jeho geo jedním callem (žádné zvláštní zjišťování exit IP). Cachováno
-    per proxy (sticky mapování → lookup běží zřídka; žádný browser tell, dotaz jde z launcheru).
-    Vrací {country, timezone, accept_languages, exit_ip} nebo None při selhání.
-    Pozn.: ip-api.com free tier = HTTP (https jen placené)."""
+    """Resolve proxy-exit GeoIP through ip-api.com via the proxy itself.
+
+    Results are cached per sticky proxy. Return country, time zone, languages,
+    and exit IP, or None on failure. The free ip-api.com tier uses HTTP.
+    """
     key = f"{px['host']}:{px['port']}"
     cache = _load_geo_cache()
     if key in cache:
@@ -384,7 +380,7 @@ def geo_from_proxy(px):
     try:
         fields = "status,message,countryCode,timezone,query"
         if px.get("scheme", "http") == "socks5":
-            # dotaz přes SOCKS5 (remote DNS): CONNECT na ip-api.com + HTTP GET
+            # Query through SOCKS5 with remote DNS, then issue an HTTP GET.
             sock = socks5_open_connect(
                 Socks5Config(px["host"], px["port"], px["user"], px["pass"]), "ip-api.com", 80)
             sock.sendall(f"GET /json/?fields={fields} HTTP/1.1\r\n"
@@ -433,8 +429,7 @@ def geo_from_proxy(px):
 
 
 def next_profile_index():
-    """Další volný index profile_NN.json v profiles/ (max existující + 1, jinak 1).
-    Generátor vlastní 01..N (podle profiles.json); čerstvé profily se řadí za ně."""
+    """Return the next free profile_NN.json index after generated profiles."""
     mx = 0
     for f in os.listdir(PROFILES_DIR):
         m = re.match(r"profile_(\d+)\.json$", f)
@@ -444,15 +439,12 @@ def next_profile_index():
 
 
 def ensure_host_probe(gpu_mode, build, blocking=True):
-    """Zajistí cache reálných vlastností hostitele (scripts/probe_host.py, schema v2).
+    """Ensure that a schema-v2 cache of measured host properties exists.
 
-    Vždy SYNCHRONNĚ (jednorázově ~15 s na stroj): generování profilu dnes host POTŘEBUJE
-    — GPU identita, screen/dpr/color_depth, počet jader i font inventář se čtou z probu a
-    tichý fallback na konstanty tohohle vývojového stroje byl zrušen (viz
-    portable-host policy). Dřívější běh na pozadí by znamenal, že první
-    generování na novém stroji spadne.
-
-    Parametr `blocking` zůstává kvůli zpětné kompatibilitě volajících a ignoruje se."""
+    Profile generation requires the measured GPU, screen, core count, memory, and
+    font inventory. Run synchronously once per machine; there is no development-host
+    fallback. `blocking` remains only for caller compatibility and is ignored.
+    """
     try:
         sys.path.insert(0, os.path.join(ROOT, "scripts"))
         import probe_host as P
@@ -471,11 +463,10 @@ def ensure_host_probe(gpu_mode, build, blocking=True):
 
 
 def ensure_codec_support(exe):
-    """Jednorázově na stroj ověří, že se AVC/AAC skutečně dekódují (krok K2).
+    """Verify actual AVC/AAC decoding once per machine.
 
-    Nedostupnost samotného modulu se nesmí stát tichým vypnutím kontroly, ale ani
-    neprůchodným startem — proto hlasité varování a pokračování, stejně jako u
-    ostatních volitelných částí launcheru."""
+    If the optional preflight module is unavailable, warn clearly but allow launch.
+    """
     try:
         sys.path.insert(0, os.path.join(ROOT, "scripts"))
         import preflight_codecs
@@ -486,7 +477,7 @@ def ensure_codec_support(exe):
 
 
 def warn_if_gpu_implausible(prof, host):
-    """Varování (NE blokace, dle zadání), když claimovaná karta neodpovídá hostu."""
+    """Warn without blocking when a claimed GPU is implausible for the host."""
     blk = prof.get("gpu")
     if not blk or not host:
         return
@@ -505,9 +496,10 @@ def _gp_short(renderer):
 
 
 def apply_gpu_mode(idx, gpu_mode, host):
-    """Přepíše GPU existujícího profilu dle režimu a ULOŽÍ ho (rozhodnutí uživatele:
-    persistovat). Vrací True, když se profil změnil. Změna GPU = nová identita, proto
-    hlasité varování o diskontinuitě visitor ID."""
+    """Apply and persist a GPU mode to an existing profile.
+
+    Return True on change and warn because changing the GPU breaks identity continuity.
+    """
     path = os.path.join(PROFILES_DIR, f"profile_{idx:02d}.json")
     if not os.path.exists(path):
         return False
@@ -521,7 +513,7 @@ def apply_gpu_mode(idx, gpu_mode, host):
         return False
     if new_block:
         prof["gpu"] = new_block
-        # top-level webgl.* drž na HOSTU (bezpečný fallback, když C++ blok zahodí)
+        # Keep top-level webgl host-bound as the fallback if C++ rejects the GPU block.
         prof["webgl"] = {"vendor": gp.host_webgl()["vendor"],
                          "renderer": gp.host_webgl()["renderer"]}
     else:
@@ -538,14 +530,13 @@ def apply_gpu_mode(idx, gpu_mode, host):
 
 
 def create_new_profile(gpu_mode=None):
-    """ČERSTVÝ profil pro launch bez čísla: náhodně vybere bázový otisk z READ-ONLY
-    profiles.json a vygeneruje k němu nový NÁHODNÝ seed → z něj se DETERMINISTICKY
-    odvodí všechny podporované per-profil osy (screen/hwConc/mem/GPU name-rotace/
-    color-scheme/media-devices/text-edging/font-hiding/chrome-patch). Pravidlo 8:
-    náhodný je jen seed, ne per-session šum; profil je stabilní přes reload (seed
-    se uloží do souboru). Zapíše profiles/profile_NN.json (další volný index) a vrátí
-    ten index. profiles.json zůstává jen ke čtení (pravidlo 5)."""
-    gp._assert_no_core_in_bundles()  # modulová invarianta (jako generate_profiles.main)
+    """Create, persist, and return the index of a fresh deterministic profile.
+
+    Select a read-only reference fingerprint and a random seed. All supported axes
+    derive deterministically from that seed, preserving reload stability. The
+    reference profiles.json remains read-only.
+    """
+    gp._assert_no_core_in_bundles()  # Same module invariant as generate_profiles.main.
     with open(os.path.join(ROOT, "profiles.json"), "r", encoding="utf-8") as f:
         refs = json.load(f)
     ref = random.choice(refs)
@@ -569,66 +560,49 @@ def load_profile(idx):
 
 
 def stealth_flags():
-    """Stealth flagy s rozvahou (Fáze 5). Determinismus (potlačit Finch randomizaci)
-    a odstranění automation artefaktů. NEpřehánět vypínání featur (samo je signál).
-    Napodobit Chrome, ne jít plně 'dark'."""
+    """Return a conservative set of determinism and automation-hygiene flags."""
     return [
-        "--disable-field-trial-config",          # determinismus fingerprintu přes reload
-        # TLSTrustAnchorIDs: JA4 t13d1516h2 (== reálný Chrome).
-        # ReduceAcceptLanguage: ponechá plnou Accept-Language hlavičku "cs-CZ,cs;q=0.9,en;q=0.8"
-        # (== reálný Chrome), jinak by ji fork zredukoval na "cs-CZ". Pref intl.accept_languages
-        # (ensure_lang_pref) plní ZÁROVEŇ navigator.languages i tuto hlavičku plným seznamem.
-        # POZN.: NEopravuje browser_name (měřeno 2026-07-11: reload-downgrade "Chrome"→
-        # "Chromium-Based Browser" je server-side chování dema, sdílené i s genuine Chrome — viz CHANGELOG).
+        "--disable-field-trial-config",          # fingerprint determinism across reloads
+        # TLSTrustAnchorIDs preserves the stock Chrome JA4 value t13d1516h2.
+        # ReduceAcceptLanguage keeps the full stock Accept-Language header. The
+        # intl.accept_languages preference supplies both that header and
+        # navigator.languages. This does not alter the demo's server-side browser-name
+        # downgrade, which genuine Chrome also exhibits (measured 2026-07-11).
         "--disable-features=OptimizationHints,TLSTrustAnchorIDs,ReduceAcceptLanguage",
         "--no-default-browser-check",
         "--no-first-run",
-        # POZN.: NEpřidávat --disable-blink-features=AutomationControlled ani
-        # cokoli, co řeší webdriver — to je nativně v C++ (Fáze 4), ne přes flag.
+        # Do not add AutomationControlled or webdriver-related flags; native C++ owns it.
     ]
 
 
 def angle_flags(profile):
-    """Per-profil ANGLE backend (EXPERIMENT Fáze 4+): přepnutí grafického backendu
-    (d3d11 default | gl | vulkan) změní canvas/WebGL hash NATIVNĚ — jiný render
-    reálné konfigurace, ne šum. NUTNÁ podmínka: webgl.renderer musí jít nativně
-    (profile.webgl == null → GetWebglRenderer() vrací nullopt), jinak spoofnutý
-    D3D11 string ≠ skutečný GL/Vulkan výstup = tampering tell. Bez klíče = default
-    D3D11 (žádný flag). Hodnota se nevaliduje zde — případný neznámý backend spadne
-    na Chrome default."""
+    """Select an optional per-profile ANGLE backend.
+
+    A real backend change affects canvas and WebGL natively. It is safe only when
+    the renderer remains native; otherwise the claimed renderer and actual output
+    conflict. A missing or unknown value falls back to Chrome's default.
+    """
     backend = profile.get("angle_backend")
     return [f'--use-angle={backend}'] if backend else []
 
 
 def webrtc_flags(proxy_arg):
-    """Za AKTIVNÍ proxy zabránit úniku veřejné IP přes WebRTC (Fáze 5+, Tier 1 geo).
-    Lokální forwarder je HTTP CONNECT tunel = jen TCP → STUN/UDP by šlo PŘÍMO mimo proxy
-    a prozradilo reálnou WAN IP (srflx candidate), zatímco HTTP jde přes proxy exit IP =
-    tvrdý proxy/VPN tell (geo mismatch). `disable_non_proxied_udp`: WebRTC smí UDP jen přes
-    proxy; náš proxy UDP nenese a bez TURN → žádný srflx/public candidate = žádný únik
-    (host candidate zůstává mDNS `.local`). Chování == běžná enterprise konfigurace
-    (firewall/VPN, kde veřejné UDP ICE kandidáty nejsou) → on-manifold, ne anomálie.
-    Cílem NENÍ „vypnout WebRTC" — API zůstává funkční, potlačeny jen veřejné UDP kandidáty.
-    NENÍ per-profil. Bez proxy se NEpřidává (reálná IP z WebRTC == přímé spojení = korektní).
-    `iceTransportPolicy` NEMĚNÍME (řeší se na síťové vrstvě, ne přes RTCPeerConnection).
+    """Declare WebRTC public-IP protection whenever a proxy is active.
 
-    POZOR (změřeno 149): chrome.exe tento switch IGNORUJE — `--force-webrtc-ip-handling-policy`
-    čte jen content_shell; chrome bere policy z PREFERENCE `webrtc.ip_handling_policy`
-    (renderer_preferences_util.cc:158). Efektivní mechanismus je proto `ensure_webrtc_pref()`
-    níže (pref-seed do Default/Preferences). Flag ponechán jako deklarace záměru + pojistka pro
-    budoucí rebase (je neviditelný pro web obsah, tj. neškodný)."""
+    The API remains functional, but public UDP candidates must not bypass a TCP-only
+    proxy and reveal a different WAN IP. Chrome 149 ignores this command-line switch
+    and reads `webrtc.ip_handling_policy`; `ensure_webrtc_pref()` is therefore the
+    effective mechanism. The harmless flag documents intent and guards future rebases.
+    """
     return ["--force-webrtc-ip-handling-policy=disable_non_proxied_udp"] if proxy_arg else []
 
 
 def ensure_webrtc_pref(user_data_dir, active):
-    """Efektivní zamezení WebRTC úniku: pref `webrtc.ip_handling_policy` =
-    `disable_non_proxied_udp` v profilovém `Default/Preferences` (chrome switch ignoruje,
-    čte pref — viz webrtc_flags). Orchestrace, žádné C++, žádná registry/system změna.
-    Není to „tracked/secure" pref → plain zápis stačí.
-      active=True (za proxy):  pref NASTAVÍ (merge, zachová ostatní klíče).
-      active=False (bez proxy): pref ODSTRANÍ — pref by jinak v profilu přetrval napříč běhy
-        a suppressoval WebRTC i v no-proxy režimu; odstraněním zůstává no-proxy default
-        (reálná IP z WebRTC = korektní pro přímé spojení). Splňuje „žádná změna no-proxy"."""
+    """Set WebRTC proxy protection in the profile Preferences file.
+
+    Merge the policy when a proxy is active. Remove it otherwise so the setting
+    cannot persist into a direct connection and change normal no-proxy behavior.
+    """
     default_dir = os.path.join(user_data_dir, "Default")
     pref_file = os.path.join(default_dir, "Preferences")
     if active:
@@ -639,7 +613,7 @@ def ensure_webrtc_pref(user_data_dir, active):
                 with open(pref_file, "r", encoding="utf-8") as f:
                     prefs = json.load(f)
             except Exception:
-                prefs = {}  # poškozený -> Chrome přepíše; my jen zaručíme náš klíč
+                prefs = {}  # Chrome will replace corrupt preferences; ensure our key.
         if not isinstance(prefs.get("webrtc"), dict):
             prefs["webrtc"] = {}
         prefs["webrtc"]["ip_handling_policy"] = "disable_non_proxied_udp"
@@ -660,12 +634,11 @@ def ensure_webrtc_pref(user_data_dir, active):
 
 
 def ensure_lang_pref(user_data_dir, accept_languages):
-    """navigator.languages + Accept-Language koherentní s geo proxy, přes pref
-    `intl.accept_languages` (OVĚŘENO launcher-only: pref → navigator.languages i
-    Accept-Language hlavička; funguje s `--disable-features=ReduceAcceptLanguage`).
-    Orchestrace, žádné C++. accept_languages truthy → NASTAV (merge); None → ODSTRAŇ
-    (host default cs-CZ = žádná změna no-proxy). `selected_languages` drženo v souladu
-    (UI language list). Není tracked pref."""
+    """Keep navigator.languages and Accept-Language coherent with proxy GeoIP.
+
+    Merge `intl.accept_languages` and `selected_languages` when provided; remove
+    them otherwise to preserve the host's no-proxy default.
+    """
     default_dir = os.path.join(user_data_dir, "Default")
     pref_file = os.path.join(default_dir, "Preferences")
     if accept_languages:
@@ -700,21 +673,16 @@ def ensure_lang_pref(user_data_dir, accept_languages):
 
 
 def window_flags(profile):
-    """Per-profil outer velikost okna z profilu (generátor ji drží koherentní se
-    screen.avail A reálným monitorem). Bez --window-size by maximalizace na reálném
-    1920x1080 hostu mohla dát innerWidth > claimovaný screen.width = nemožné = tell.
-    Chybějící pole (starší profil) → default Chrome okno (žádný flag)."""
+    """Return a profile-coherent outer window size, if one is configured."""
     s = profile.get("screen", {})
     w, h = s.get("window_width"), s.get("window_height")
     flags = [f'--window-size={w},{h}'] if w and h else []
-    # HiDPI host (škálování Windows != 100 %) se srovná na dpr 1.0, jinak by
-    # --window-size i claimovaný screen byly v jiných jednotkách než realita.
-    # Na běžném hostu vrací prázdný list. Viz generate_profiles.hidpi_scale_flags.
+    # Normalize a HiDPI host to DPR 1 so window and claimed screen use equal units.
     return gp.hidpi_scale_flags() + flags
 
 
 def pick_loopback_port():
-    """Vybere aktuálně volný loopback port bez speciální automation větve port=0."""
+    """Select an available loopback port without the special automation port 0."""
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         if os.name == "nt" and hasattr(socket, "SO_EXCLUSIVEADDRUSE"):
@@ -726,7 +694,7 @@ def pick_loopback_port():
 
 
 def control_flags(control, cdp_port=None):
-    """Opt-in CDP. Režim none nepřidává žádný automation/debugging switch."""
+    """Return opt-in CDP flags; none adds no automation or debugging switch."""
     if control == "none":
         return []
     if control == "cdp":
@@ -739,7 +707,7 @@ def control_flags(control, cdp_port=None):
 
 
 def wait_for_cdp_endpoint(user_data_dir, proc, timeout=30.0, expected_port=None):
-    """Načte skutečný browser WebSocket endpoint z Chrome DevToolsActivePort."""
+    """Read the actual browser WebSocket endpoint once Chrome exposes it."""
     active_port = os.path.join(user_data_dir, DEVTOOLS_ACTIVE_PORT)
     deadline = time.time() + timeout
     last_error = None
@@ -772,7 +740,7 @@ def wait_for_cdp_endpoint(user_data_dir, proc, timeout=30.0, expected_port=None)
 
 
 def write_control_info(path, info):
-    """Volitelný strojově čitelný hand-off pro proces, který spustil launcher."""
+    """Write an optional machine-readable handoff for the launching process."""
     if not path:
         return
     target = os.path.abspath(path)
@@ -794,11 +762,11 @@ def build_cmdline(profile, config_path, proxy_arg, chrome_exe=None, control="non
         cmd.append(f'--proxy-server={proxy_arg}')
     cmd += window_flags(profile)
     cmd += angle_flags(profile)
-    cmd += webrtc_flags(proxy_arg)   # jen při aktivní proxy: zamezit úniku veřejné IP přes WebRTC
+    cmd += webrtc_flags(proxy_arg)   # Prevent public-IP leakage only behind a proxy.
     cmd += stealth_flags()
     cmd += control_flags(control, cdp_port=cdp_port)
 
-    # Načtení případných extra flagů z prostředí (např. pro testy s rozšířením)
+    # Load optional environment flags, for example extension-test switches.
     extra_flags_env = os.environ.get("FP_LAUNCHER_EXTRA_FLAGS")
     if extra_flags_env:
         import shlex
@@ -825,24 +793,24 @@ def _launch_one_impl(idx, with_proxy, dry_run, chrome_exe=None, control="none",
             print(f"[profile {idx}] proxy.txt is empty; continuing without a proxy")
         else:
             px = proxies[pi]
-            # geo do configu (konzistence timezone/locale/WebRTC s proxy)
+            # Add GeoIP data to keep time zone, locale, and WebRTC coherent with the proxy.
             geo = geo_from_proxy(px)
             if geo:
                 profile["proxy"] = {"index": pi, "geo": geo}
                 profile["timezone"] = geo.get("timezone") or profile.get("timezone")
-                _apply_locale_fonts(profile, geo.get("country"))  # locale-aware fonty
-                # config se přepíše i na disk, aby C++ (timezone/fonty) dostal geo-konzistentní hodnoty
+                _apply_locale_fonts(profile, geo.get("country"))  # locale-aware fonts
+                # Persist the update so native time-zone/font masking sees coherent values.
                 paths.write_json_atomic(path, profile)
             if px.get("scheme", "http") == "socks5":
-                # SOCKS5 -> lokální no-auth SOCKS5 forwarder (Chrome neumí SOCKS5 auth z CLI).
-                # Umožní i WebRTC UDP přes proxy (srflx=proxy IP) když forwarder podporuje UDP ASSOCIATE.
+                # Chrome cannot authenticate SOCKS5 from CLI, so use a no-auth local forwarder.
+                # UDP ASSOCIATE also permits proxied WebRTC UDP when the upstream supports it.
                 fwd = Socks5Forwarder(Socks5Config(px["host"], px["port"], px["user"], px["pass"]))
                 fwd.start()
                 forwarder = fwd
                 proxy_arg = f'socks5://127.0.0.1:{fwd.port}'
                 print(f"[profile {idx}] SOCKS5 forwarder 127.0.0.1:{fwd.port} -> {px['host']}:{px['port']} (auth)")
             elif px["user"]:
-                # authenticating HTTP upstream -> lokální CONNECT forwarder (netermuje TLS)
+                # Authenticated HTTP upstream through a local CONNECT forwarder; TLS stays intact.
                 fwd = ProxyForwarder(ForwarderConfig(px["host"], px["port"], px["user"], px["pass"]))
                 fwd.start()
                 forwarder = fwd
@@ -851,12 +819,11 @@ def _launch_one_impl(idx, with_proxy, dry_run, chrome_exe=None, control="none",
             else:
                 proxy_arg = f'http://{px["host"]}:{px["port"]}'
 
-    # WebRTC anti-leak přes pref (chrome.exe ignoruje CLI switch — čte pref). Jen za proxy.
+    # Chrome reads the WebRTC anti-leak preference and ignores the CLI switch.
     ensure_webrtc_pref(profile["user_data_dir"], bool(proxy_arg))
-    # navigator.languages + Accept-Language koherentní s geo proxy (launcher-only pref).
-    # Bez geo (žádná proxy / lookup selhal) → fallback = COUNTRY_LANGS["CZ"] (host JE cs-CZ;
-    # DRY sdílení s CZ-proxy cestou → no-proxy a CZ-proxy nemůžou rozdriftovat). Stock cs-CZ
-    # Chrome dává navigator.languages [cs-CZ,cs,en] (3), ne [cs-CZ,cs,en-US,en].
+    # Keep navigator.languages and Accept-Language coherent with proxy GeoIP. Without
+    # GeoIP, use the cs-CZ host fallback shared with the CZ-proxy path. Stock cs-CZ
+    # Chrome reports [cs-CZ, cs, en], not [cs-CZ, cs, en-US, en].
     ensure_lang_pref(profile["user_data_dir"], geo["accept_languages"] if geo else COUNTRY_LANGS["CZ"])
     warn_locale_without_proxy(profile, geo)   # host locale vs. no-proxy fallback (3.8)
 
@@ -870,15 +837,14 @@ def _launch_one_impl(idx, with_proxy, dry_run, chrome_exe=None, control="none",
             forwarder.stop()
         return None
     if not os.path.exists(exe):
-        print(f"  ! chrome.exe neexistuje ({exe}) — the build is incomplete or --build is incorrect.")
+        print(f"  ! chrome.exe does not exist ({exe}); the build is incomplete or --build is incorrect.")
         if forwarder:
             forwarder.stop()
         return None
 
-    # Kodeky: implementaci AVC/AAC nedistribuujeme, dekóduje operační systém — ověřit,
-    # že to na TOMHLE stroji opravdu umí. Hlášení podpory řídí buildflagy, takže bez
-    # téhle kontroly bychom mohli hlásit podporu a nepřehrát (the codec preflight invariant).
-    # Výsledek je cachovaný per stroj, takže se reálně měří jednou.
+    # Browser3 does not distribute AVC/AAC implementations; Windows decodes them.
+    # Verify actual support because build flags control the advertised capability.
+    # Cache the measured result per machine.
     ensure_codec_support(exe)
 
     active_port = os.path.join(profile["user_data_dir"], DEVTOOLS_ACTIVE_PORT)
@@ -942,7 +908,7 @@ def _launch_one_impl(idx, with_proxy, dry_run, chrome_exe=None, control="none",
 
 def launch_one(idx, with_proxy, dry_run, chrome_exe=None, control="none",
                cdp_timeout=30.0, control_output=None, desktop="current"):
-    """Získá profilový lock před jakoukoli runtime mutací a před startem forwarderu."""
+    """Acquire the profile lock before runtime mutation or forwarder startup."""
     if dry_run:
         return _launch_one_impl(idx, with_proxy, True, chrome_exe, control,
                                 cdp_timeout, control_output, profile_lock=None,
@@ -988,9 +954,8 @@ def main():
                          f"'{gp.DEFAULT_GPU_MODE}' ('family' on weak/integrated graphics).")
     args = ap.parse_args()
 
-    # Proxy je default-ON, když je proxy.txt neprázdný: profil bez proxy má jiné geo/IP než
-    # profil s proxy, takže „zapomenuté --with-proxy" tiše rozbíjí koherenci (pravidlo 8).
-    # --no-proxy je explicitní opt-out, --with-proxy zůstává (no-op navíc, zpětná kompatibilita).
+    # A non-empty proxy.txt enables proxies by default. Explicit --no-proxy prevents
+    # accidentally changing a profile's GeoIP; --with-proxy remains for compatibility.
     use_proxy = not args.no_proxy and (args.with_proxy or bool(load_proxies()))
     if args.no_proxy and args.with_proxy:
         sys.exit("--with-proxy and --no-proxy are mutually exclusive")
@@ -1001,20 +966,17 @@ def main():
     else:
         print(f"[build] {args.build} -> {exe}")
 
-    # Host probe je potřeba vždy, když se profil GENERUJE nebo PŘEPISUJE (identita karty,
-    # screen/dpr/color_depth, jádra/paměť i font inventář se čtou z něj). Bez --gpu se
-    # u existujícího profilu nic nemění → probe se nespouští a launch je okamžitý.
+    # Generation or GPU rewrites require measured GPU, screen, cores, memory, and fonts.
+    # Launching an unchanged existing profile does not run the probe.
     generating_fresh = not (args.all or args.profile)
     host = None
     if args.gpu or generating_fresh:
-        # Platí i pro --gpu off: top-level webgl.* je REÁLNÁ karta hosta, takže i „bez
-        # maskování GPU" se profil bez probu vygenerovat nedá (žádný tichý fallback).
+        # Even --gpu off needs the measured host GPU for top-level webgl values.
         host = ensure_host_probe(args.gpu or "common", args.build)
         if not host:
             sys.exit("Generating or rewriting a profile requires a valid host probe, but the probe failed.\n"
                      "  Run manually: python scripts/probe_host.py --force --build " + args.build)
-    # Default režim pro NOVÝ profil se odvozuje až od známého hosta (na slabé iGPU je
-    # to `family`, ne `common` — viz gp.default_gpu_mode).
+    # Derive a fresh profile's default GPU mode only after the host is known.
     effective_gpu = args.gpu or (gp.default_gpu_mode() if generating_fresh else None)
 
     n = len([f for f in os.listdir(PROFILES_DIR) if f.startswith("profile_") and f.endswith(".json")])
@@ -1023,11 +985,10 @@ def main():
     elif args.profile:
         indices = [args.profile]
     else:
-        # Bez čísla profilu → vygeneruj ČERSTVÝ profil (náhodný bázový otisk z
-        # profiles.json + nový náhodný seed) a rovnou ho spusť.
+        # No profile number: generate and immediately launch a fresh seeded profile.
         indices = [create_new_profile(gpu_mode=effective_gpu)]
 
-    # Existující profil + explicitní --gpu → přepiš a ulož (persistentní, viz plán).
+    # Apply an explicit GPU mode persistently to existing profiles.
     if args.gpu and (args.all or args.profile):
         for i in indices:
             if not apply_gpu_mode(i, args.gpu, host):

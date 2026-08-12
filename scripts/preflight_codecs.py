@@ -35,25 +35,24 @@ import browser3_paths as paths
 PROBE_DIR = os.path.join(ROOT, "scripts", "codec_probe")
 CACHE_PATH = paths.CODEC_CACHE_FILE
 
-# Kodeky, které po L2 dekóduje operační systém a jejichž selhání je rozpor s tím,
-# co hlásíme. Klíč = jméno v odpovědi sondy.
+# Codecs decoded by the operating system after L2 removal. Failure would conflict
+# with the capabilities Browser3 advertises. Keys match the probe response.
 REQUIRED = {
     "aac": "AAC (Media Foundation)",
     "h264": "H.264 (D3D11 / Media Foundation)",
 }
 
-# 40 s nestačilo: monolitický Release při PRVNÍM startu (studená cache, čerstvý build)
-# odpovídal déle a preflight hlásil „sonda neodpověděla" na každém novém stroji.
-# Sonda běží jednou za stroj, takže velkorysý strop nic nestojí.
+# Forty seconds was insufficient for the first cold start of a monolithic Release
+# build. The probe runs once per machine, so a generous ceiling is inexpensive.
 PROBE_TIMEOUT_S = 120
 
 
 class _Handler(BaseHTTPRequestHandler):
-    """Odbaví sondu a vzorky; `/result` sebere verdikt."""
+    """Serve the probe and samples; `/result` collects the verdict."""
 
     MIME = {".html": "text/html; charset=utf-8", ".mp4": "video/mp4"}
 
-    def do_GET(self):  # noqa: N802 (jméno vynucuje BaseHTTPRequestHandler)
+    def do_GET(self):  # noqa: N802 (name required by BaseHTTPRequestHandler)
         parsed = urlparse(self.path)
         if parsed.path == "/result":
             self.server.result = {k: v[0] for k, v in parse_qs(parsed.query).items()}
@@ -65,7 +64,7 @@ class _Handler(BaseHTTPRequestHandler):
 
         name = os.path.basename(parsed.path) or "index.html"
         path = os.path.join(PROBE_DIR, name)
-        # Vzorky i stránka jsou naše, ale cesta přichází z prohlížeče — držet ji uvnitř.
+        # The browser supplies the path; keep it within our probe directory.
         if os.path.dirname(os.path.abspath(path)) != os.path.abspath(PROBE_DIR) \
                 or not os.path.isfile(path):
             self.send_error(404)
@@ -73,8 +72,8 @@ class _Handler(BaseHTTPRequestHandler):
         with open(path, "rb") as fh:
             body = fh.read()
 
-        # Range: mediální stack si o rozsahy říká a na neobsloužený požadavek umí
-        # zůstat viset v networkState=LOADING místo aby ohlásil chybu.
+        # The media stack requests byte ranges and may remain in LOADING when a
+        # range request is not served instead of reporting a useful error.
         status, start, end = 200, 0, len(body) - 1
         rng = self.headers.get("Range")
         if rng and rng.startswith("bytes="):
@@ -104,8 +103,8 @@ class _Handler(BaseHTTPRequestHandler):
         pass
 
     def handle_one_request(self):
-        # Prohlížeč se na konci sondy zavírá a rozpojená spojení jinak vysypou do
-        # logu ConnectionResetError traceback. Není to chyba a plete se s reálnými.
+        # Closing the browser at probe completion resets connections. Suppress the
+        # resulting traceback because it is expected and obscures real failures.
         try:
             super().handle_one_request()
         except (ConnectionResetError, ConnectionAbortedError):
@@ -113,10 +112,11 @@ class _Handler(BaseHTTPRequestHandler):
 
 
 def _machine_key(chrome_exe):
-    """Na čem verdikt závisí. Změna kteréhokoli z toho = přeměřit.
+    """Return inputs that invalidate a cached verdict when they change.
 
-    Ovladač GPU a build Windows proto, že na nich stojí D3D11/MF dekódování; identita
-    binárky proto, že právě její obsah (jaké kodeky jsme z ní vyřadili) se ověřuje."""
+    D3D11/Media Foundation decoding depends on the GPU driver and Windows build;
+    the executable identity captures which codecs the binary excludes.
+    """
     key = {}
     try:
         st = os.stat(chrome_exe)
@@ -136,9 +136,8 @@ def _machine_key(chrome_exe):
     return key
 
 
-# Jak dlouho platí NEPRŮKAZNÝ verdikt. Trvale se cachovat nesmí (stroj se opraví
-# a my bychom to nikdy nezjistili), zahodit hned taky ne — na rozbitém stroji by se
-# čtyřicetisekundová sonda pouštěla při každém startu.
+# Cache an inconclusive verdict briefly: never forever, because the machine may be
+# repaired, but long enough to avoid rerunning a slow probe at every launch.
 INCONCLUSIVE_TTL_S = 3600
 
 
@@ -172,12 +171,12 @@ def _save(chrome_exe, result, inconclusive=False):
 
 
 def measure(chrome_exe, quiet=False):
-    """Spustí sondu a vrátí slovník výsledků (`{'aac': '1', 'h264': '0', ...}`)."""
+    """Run the probe and return its result mapping."""
     if not os.path.isfile(chrome_exe):
         raise RuntimeError(f"chrome.exe was not found: {chrome_exe}")
 
-    # Vláknový server: dva mediální elementy načítají souběžně a jednovláknový
-    # HTTPServer je navzájem zablokuje (element pak jen visí v networkState=LOADING).
+    # Both media elements load concurrently; a single-threaded server can deadlock
+    # them and leave an element indefinitely in networkState=LOADING.
     httpd = ThreadingHTTPServer(("127.0.0.1", 0), _Handler)
     httpd.result = None
     thread = threading.Thread(target=httpd.serve_forever, daemon=True)
@@ -193,14 +192,13 @@ def measure(chrome_exe, quiet=False):
             "--no-first-run", "--no-default-browser-check",
             "--disable-field-trial-config",
             "--autoplay-policy=no-user-gesture-required",
-            # Headful (headless umí dekódování rozhodnout jinak), ale mimo obrazovku,
-            # ať to při startu launcheru nebliká uživateli přes plochu.
+            # Use headful mode because headless decoding can differ, but position the
+            # window off-screen so the launch-time probe does not flash on screen.
             "--window-position=-32000,-32000", "--window-size=320,240",
-            # NUTNÉ k tomu, aby okno mimo obrazovku vůbec dekódovalo. Bez těchhle dvou
-            # přepínačů považuje Chrome renderer za skrytý, uspí ho a `<video>` uvázne
-            # na readyState=0 — tedy přesně tak, jako by kodek chyběl. Stálo to celý den
-            # chybné diagnózy „rozbitý stroj"; kontrolní vzorek to neodhalí, protože
-            # uvázne stejně. Ověřeno 2026-07-27: s nimi projde AAC, H.264 i VP9.
+            # Required for decoding in the off-screen window. Without these flags,
+            # Chrome suspends the hidden renderer and `<video>` remains at
+            # readyState=0, which is indistinguishable from a missing codec. Verified
+            # on 2026-07-27 with AAC, H.264, and VP9.
             "--disable-backgrounding-occluded-windows", "--disable-renderer-backgrounding",
             f"http://127.0.0.1:{port}/index.html",
         ]
@@ -213,9 +211,8 @@ def measure(chrome_exe, quiet=False):
             if httpd.result is not None:
                 return httpd.result
             if proc.poll() is not None:
-                # Prohlížeč spadl dřív, než stránka odpověděla. To samo o sobě není
-                # verdikt o kodeku — rozlišit se to musí, jinak by preflight odmítl
-                # stroj kvůli úplně jiné závadě.
+                # An early browser exit is not a codec verdict; distinguish it so an
+                # unrelated crash does not make preflight reject the machine.
                 raise RuntimeError(
                     f"the browser exited (code {proc.returncode}) before the probe "
                     "responded; codec support is unknown")
@@ -234,10 +231,11 @@ def measure(chrome_exe, quiet=False):
 
 
 def check(chrome_exe, force=False, strict=True, quiet=False):
-    """Hlavní vstup pro launcher. Vrací výsledek; při `strict` chybu vyhodí.
+    """Launcher entry point; raise coherence failures when `strict` is true.
 
-    `FP_ALLOW_HOST=1` degraduje chybu na varování — stejná úmluva jako u
-    `generate_profiles.preflight()`, a stejně tak jen pro diagnostiku."""
+    `FP_ALLOW_HOST=1` downgrades failures to warnings for diagnostics, matching
+    the convention used by `generate_profiles.preflight()`.
+    """
     cached = None if force else load_cached(chrome_exe)
     if cached:
         result = cached["result"]
@@ -245,18 +243,16 @@ def check(chrome_exe, force=False, strict=True, quiet=False):
         try:
             result = measure(chrome_exe, quiet=quiet)
         except RuntimeError as exc:
-            # Neúspěch MĚŘENÍ není neúspěch stroje. Necachovat, jen upozornit —
-            # jinak by jedna zaseknutá relace stroj trvale odsoudila.
+            # A measurement failure is not a machine failure. Do not cache it: one
+            # stuck session must not permanently reject the machine.
             print(f"  ! codec preflight could not run: {exc}")
             return None
         _save(chrome_exe, result)
 
-    # WebRTC sender capabilities se posuzují PRVNÍ a samostatně: nezávisí na přehrávací
-    # pipeline, takže jsou průkazné i na stroji, kde dekódovací sondy selžou, a naopak
-    # nesmí projít jen proto, že dekódování je v pořádku. Reálný Chrome H.264
-    # k odesílání nabízí vždy (nese softwarový OpenH264); my ho nedistribuujeme, takže
-    # na stroji bez hardwarového encoderu by se z nabídky ztratil — a to je rozpor
-    # s claimovanou identitou, ne jen chybějící funkce.
+    # Evaluate WebRTC sender capabilities first and independently of playback.
+    # Stock Chrome always offers H.264 sending through software OpenH264. Browser3
+    # does not distribute it, so a machine without a hardware encoder would expose
+    # an identity mismatch rather than merely a missing feature.
     if result.get("rtc_h264_send") == "0":
         msg = (
             "Codec preflight FAILED: this computer has no hardware H.264 encoder.\n"
@@ -276,10 +272,9 @@ def check(chrome_exe, force=False, strict=True, quiet=False):
                   "and WebRTC advertises H.264.")
         return result
 
-    # Kontrolní vzorek (VP9/WebM) používá kodeky, které v binárce máme a nikdy
-    # neodstraníme. Když neprojde ani ten, je rozbité přehrávání jako celek a nemá
-    # to s licenčně odstraněnými kodeky nic společného — takový stroj odmítnout
-    # nesmíme, byla by to chybná diagnóza. Verdikt se navíc necachuje.
+    # VP9/WebM is a control whose codecs remain in the binary. If it also fails,
+    # playback as a whole is broken and the result says nothing about the codecs
+    # removed for licensing reasons; rejecting the machine would be a false diagnosis.
     if result.get("control") != "1":
         _save(chrome_exe, result, inconclusive=True)
         if not cached:

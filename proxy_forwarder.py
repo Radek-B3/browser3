@@ -38,7 +38,7 @@ class ForwarderConfig:
 
 
 def _pump(a, b):
-    """Obousměrné slepé přeposílání bajtů (tunel)."""
+    """Relay bytes bidirectionally without inspecting the tunnel."""
     try:
         while True:
             r, _, _ = select.select([a, b], [], [], 60)
@@ -56,7 +56,7 @@ def _pump(a, b):
 def _handle_client(client, cfg: ForwarderConfig):
     upstream = None
     try:
-        # Přečti první řádek (a hlavičky do prázdného řádku) požadavku prohlížeče.
+        # Read the request line and headers through the terminating blank line.
         head = b""
         while b"\r\n\r\n" not in head:
             chunk = client.recv(BUFSIZE)
@@ -71,14 +71,14 @@ def _handle_client(client, cfg: ForwarderConfig):
         upstream = socket.create_connection((cfg.up_host, cfg.up_port), timeout=30)
 
         if method == b"CONNECT":
-            # host:port z "CONNECT host:port HTTP/1.1"
+            # Extract host:port from "CONNECT host:port HTTP/1.1".
             target = first_line.split(b" ")[1]
             req = b"CONNECT " + target + b" HTTP/1.1\r\n"
             req += b"Host: " + target + b"\r\n"
             req += cfg.auth_header()
             req += b"\r\n"
             upstream.sendall(req)
-            # Přečti odpověď upstreamu (200 Connection established) a přepošli klientovi.
+            # Read the upstream response and relay it to the client.
             resp = b""
             while b"\r\n\r\n" not in resp:
                 chunk = upstream.recv(BUFSIZE)
@@ -87,11 +87,11 @@ def _handle_client(client, cfg: ForwarderConfig):
                 resp += chunk
             client.sendall(resp)
             if b" 200 " not in resp.split(b"\r\n", 1)[0]:
-                return  # upstream odmítl (auth?) -> ukonči
-            # Od teď čistý tunel: TLS handshake prohlížeče projde beze změny.
+                return  # The upstream rejected the request (possibly authentication).
+            # From this point onward, relay the browser's TLS handshake unchanged.
             _pump(client, upstream)
         else:
-            # Plain HTTP: vlož Proxy-Authorization do hlaviček a přepošli vše.
+            # Plain HTTP: add Proxy-Authorization and relay the complete request.
             line, rest = head.split(b"\r\n", 1)
             new_head = line + b"\r\n" + cfg.auth_header() + rest
             upstream.sendall(new_head)
@@ -108,7 +108,7 @@ def _handle_client(client, cfg: ForwarderConfig):
 
 
 class ProxyForwarder(threading.Thread):
-    """Lokální forwarder na 127.0.0.1:port. port=0 => OS přidělí volný."""
+    """Loopback forwarder; port=0 asks the OS to allocate an available port."""
 
     def __init__(self, cfg: ForwarderConfig, port=0):
         super().__init__(daemon=True)
@@ -140,12 +140,12 @@ class ProxyForwarder(threading.Thread):
 
 if __name__ == "__main__":
     import sys
-    # Rychlý test: python proxy_forwarder.py host port [user pass]
+    # Quick test: python proxy_forwarder.py host port [user pass]
     a = sys.argv[1:]
     cfg = ForwarderConfig(*a)
     fwd = ProxyForwarder(cfg)
     fwd.start()
-    print(f"Forwarder na 127.0.0.1:{fwd.port} -> {cfg.up_host}:{cfg.up_port}")
+    print(f"Forwarder on 127.0.0.1:{fwd.port} -> {cfg.up_host}:{cfg.up_port}")
     try:
         threading.Event().wait()
     except KeyboardInterrupt:
