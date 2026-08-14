@@ -48,11 +48,35 @@ The packaged Chromium runtime is self-contained below `runtime/`. Keep that dire
 # Reopen an existing browser identity
 python launcher.py --profile 1
 
+# Launch directly using host network (ignores proxy.txt)
+python launcher.py --profile 1 --no-proxy
+
 # Show all profile, proxy, desktop, and build options
 python launcher.py --help
 ```
 
-If `proxy.txt` contains proxies, Browser3 automatically assigns them to profiles with persistent mappings. A proxy is optional; its reputation and stability can materially affect network risk scores.
+### Optional: Using proxies
+
+Browser3 can automatically route profiles through HTTP or SOCKS5 proxies. Create a `proxy.txt` file in the root directory:
+
+```text
+# HTTP proxy without authentication
+192.0.2.10:8080
+
+# HTTP proxy with authentication
+192.0.2.11:8080:myuser:mypass
+
+# SOCKS5 or URL format
+socks5://myuser:mypass@192.0.2.12:1080
+http://myuser:mypass@192.0.2.13:8080
+```
+
+**Key features:**
+- **Sticky mapping:** Each profile stays persistently paired with its proxy across restarts to prevent location hopping.
+- **Auto-coherence:** Automatically syncs browser timezone, `Accept-Language`, and fonts to match the proxy exit IP.
+- **WebRTC leak protection:** Automatically blocks non-proxied UDP traffic to protect your direct IP.
+
+For advanced CLI options, AI agent automation (Playwright/CDP examples), and background execution via isolated desktops, see the [CLI & Automation Guide](USAGE.md).
 
 ## Download the right file
 

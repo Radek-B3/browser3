@@ -19,13 +19,5 @@ $chromiumSrc = "C:\path\to\chromium\src"
 git -C "$chromiumSrc\third_party\ffmpeg" apply "$packageRoot\licenses\ffmpeg\ffmpeg-l2-no-proprietary-decoders.patch"
 ```
 
-Release maintainers run the integrity check from the matching Browser3 engineering
-checkout before building:
-
-```powershell
-python scripts\check_codec_integrity.py --build Dev
-```
-
-Recipients using the companion LGPL source/object bundle should follow its `RELINK.md`.
-The expected submodule commit recorded by the integrity checker must be updated when the
-patched FFmpeg revision changes. A successful source-only check is not a substitute for
+Recipients using the companion LGPL source/object bundle should follow its `RELINK.md`
+to relink `chrome.dll` with a modified FFmpeg build.
