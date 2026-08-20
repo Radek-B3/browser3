@@ -36,26 +36,35 @@ def _resolve_data_root():
     return os.path.join(os.path.abspath(local_app_data), "Browser3")
 
 
-DATA_ROOT = _resolve_data_root()
-PROFILES_DIR = os.path.join(DATA_ROOT, "profiles")
-USER_DATA_ROOT = os.path.join(PROFILES_DIR, "_userdata")
-CACHE_DIR = os.path.join(DATA_ROOT, "cache")
-STATE_DIR = os.path.join(DATA_ROOT, "state")
-LOG_DIR = os.path.join(DATA_ROOT, "logs")
+def reconfigure_paths():
+    """Recompute all path constants from current environment variables."""
+    global DATA_ROOT, PROFILES_DIR, USER_DATA_ROOT, CACHE_DIR, STATE_DIR, LOG_DIR
+    global HOST_CACHE_FILE, CODEC_CACHE_FILE, GEO_CACHE_FILE, PROXY_MAP_FILE, AGENT_LOG_FILE
+    global LEGACY_PROFILES_DIR, LEGACY_FILES
 
-HOST_CACHE_FILE = os.path.join(CACHE_DIR, "host_current.json")
-CODEC_CACHE_FILE = os.path.join(CACHE_DIR, "codec_support.json")
-GEO_CACHE_FILE = os.path.join(CACHE_DIR, "proxy_geo_cache.json")
-PROXY_MAP_FILE = os.path.join(STATE_DIR, "profile_proxy_map.json")
-AGENT_LOG_FILE = os.path.join(LOG_DIR, "browser3-agent.log")
+    DATA_ROOT = _resolve_data_root()
+    PROFILES_DIR = os.path.join(DATA_ROOT, "profiles")
+    USER_DATA_ROOT = os.path.join(PROFILES_DIR, "_userdata")
+    CACHE_DIR = os.path.join(DATA_ROOT, "cache")
+    STATE_DIR = os.path.join(DATA_ROOT, "state")
+    LOG_DIR = os.path.join(DATA_ROOT, "logs")
 
-LEGACY_PROFILES_DIR = os.path.join(INSTALL_ROOT, "profiles")
-LEGACY_FILES = {
-    os.path.join(INSTALL_ROOT, "profile_proxy_map.json"): PROXY_MAP_FILE,
-    os.path.join(INSTALL_ROOT, "proxy_geo_cache.json"): GEO_CACHE_FILE,
-    os.path.join(INSTALL_ROOT, "gpu_profiles", "host_current.json"): HOST_CACHE_FILE,
-    os.path.join(INSTALL_ROOT, "gpu_profiles", "codec_support.json"): CODEC_CACHE_FILE,
-}
+    HOST_CACHE_FILE = os.path.join(CACHE_DIR, "host_current.json")
+    CODEC_CACHE_FILE = os.path.join(CACHE_DIR, "codec_support.json")
+    GEO_CACHE_FILE = os.path.join(CACHE_DIR, "proxy_geo_cache.json")
+    PROXY_MAP_FILE = os.path.join(STATE_DIR, "profile_proxy_map.json")
+    AGENT_LOG_FILE = os.path.join(LOG_DIR, "browser3-agent.log")
+
+    LEGACY_PROFILES_DIR = os.path.join(INSTALL_ROOT, "profiles")
+    LEGACY_FILES = {
+        os.path.join(INSTALL_ROOT, "profile_proxy_map.json"): PROXY_MAP_FILE,
+        os.path.join(INSTALL_ROOT, "proxy_geo_cache.json"): GEO_CACHE_FILE,
+        os.path.join(INSTALL_ROOT, "gpu_profiles", "host_current.json"): HOST_CACHE_FILE,
+        os.path.join(INSTALL_ROOT, "gpu_profiles", "codec_support.json"): CODEC_CACHE_FILE,
+    }
+
+
+reconfigure_paths()
 
 
 def ensure_runtime_dirs():

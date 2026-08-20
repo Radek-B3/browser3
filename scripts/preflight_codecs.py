@@ -204,7 +204,7 @@ def measure(chrome_exe, quiet=False):
         ]
         if not quiet:
             print("[codecs] verifying real decoding support (once per machine)...")
-        proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, cwd=ROOT)
 
         deadline = time.time() + PROBE_TIMEOUT_S
         while time.time() < deadline:

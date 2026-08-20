@@ -251,10 +251,11 @@ def host_os():
 def load_cache():
     """Return cached data only for this machine and the current schema."""
     paths.initialize_runtime_state()
-    if not os.path.isfile(CACHE):
+    cache_path = paths.HOST_CACHE_FILE
+    if not os.path.isfile(cache_path):
         return None
     try:
-        with open(CACHE, "r", encoding="utf-8") as f:
+        with open(cache_path, "r", encoding="utf-8") as f:
             d = json.load(f)
     except Exception:
         return None
@@ -301,7 +302,7 @@ def probe(build=None, timeout=90, quiet=False):
         # Native run: no profile switches and therefore no masking.
         cmd = [exe, f"--user-data-dir={udd}", "--no-first-run", "--no-default-browser-check",
                "--disable-sync", "--window-size=520,400", f"http://127.0.0.1:{port}/"]
-        proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, cwd=ROOT)
         t0 = time.time()
         while _Handler.result is None and time.time() - t0 < timeout:
             if proc.poll() is not None and time.time() - t0 > 5:
@@ -379,10 +380,10 @@ def probe(build=None, timeout=90, quiet=False):
         raise RuntimeError("the probe returned no usable identity (WebGL/WebGPU is missing)")
     if not out["screen"].get("width") or not out["hardware"].get("hardware_concurrency"):
         raise RuntimeError("the probe returned incomplete screen/hardware data (schema v2)")
-    paths.write_json_atomic(CACHE, out)
+    paths.write_json_atomic(paths.HOST_CACHE_FILE, out)
     if not quiet:
         print_summary(out)
-        print(f"[probe] saved -> {_display_path(CACHE)}")
+        print(f"[probe] saved -> {_display_path(paths.HOST_CACHE_FILE)}")
     return out
 
 

@@ -94,11 +94,21 @@ NO_PROBE_HINT = (
     "  generation stops instead of fabricating those values.")
 
 
-def host_require(what="profile generation"):
-    """Require and return host measurements, or stop with instructions."""
+def host_require(what="profile generation", build=None):
+    """Require and return host measurements, or probe automatically if missing."""
     h = host_info()
     if not h:
-        raise SystemExit(f"{what}: {NO_PROBE_HINT}")
+        try:
+            sys.path.insert(0, os.path.join(ROOT, "scripts"))
+            import probe_host as P
+            print("[host] measuring this computer (once, about 15 seconds)...")
+            h = P.probe(build=build or "Release", quiet=False)
+            _HOST_CACHE["loaded"] = True
+            _HOST_CACHE["data"] = h
+        except Exception as e:
+            raise SystemExit(f"{what}: Host probe failed ({e}).\n{NO_PROBE_HINT}")
+        if not h:
+            raise SystemExit(f"{what}: {NO_PROBE_HINT}")
     return h
 
 
@@ -976,12 +986,12 @@ WIN_MIN_BUILD = 17763          # Windows 10 1809 is Chrome 149's minimum.
 _PREFLIGHT = {"done": False}
 
 
-def preflight(strict=True):
+def preflight(strict=True, build=None):
     """Verify the host configuration; FP_ALLOW_HOST is for diagnostics only."""
     if _PREFLIGHT["done"]:
         return
     _PREFLIGHT["done"] = True
-    h = host_require("preflight")
+    h = host_require("preflight", build=build)
     problems = []
 
     os_info = h.get("os") or {}
@@ -1081,6 +1091,37 @@ def parse_gpu_arg(argv, default=DEFAULT_GPU_MODE):
             raise SystemExit(f"unknown --gpu value {val!r}, allowed: {', '.join(GPU_MODES)}")
         return val
     return default
+
+
+def ensure_profiles(gpu_mode=None, build=None):
+    """Ensure default profiles 1..5 exist, generating them if missing."""
+    paths.initialize_runtime_state()
+    out_dir = paths.PROFILES_DIR
+    os.makedirs(out_dir, exist_ok=True)
+    existing = [f for f in os.listdir(out_dir) if f.startswith("profile_") and f.endswith(".json")]
+    if existing:
+        return len(existing)
+    print("[profiles] no profiles found; generating default profiles...")
+    _assert_no_core_in_bundles()
+    preflight(build=build)
+    mode = gpu_mode or default_gpu_mode()
+    print(host_report())
+    with open(os.path.join(ROOT, "profiles.json"), "r", encoding="utf-8") as f:
+        ref = json.load(f)
+    pool = gpu_pool(mode)
+    if mode != "off" and not pool:
+        print(f"WARNING: --gpu {mode} has no templates (empty pool"
+              f"{' — the host is the only matching template' if mode == 'family' else ''})"
+              f"; profiles will keep the native host GPU.")
+    for i, r in enumerate(ref, start=1):
+        prof, fp_visible = build_profile(r, i, gpu_mode=mode)
+        path = os.path.join(out_dir, f"profile_{i:02d}.json")
+        paths.write_json_atomic(path, prof)
+        print(profile_summary(path, prof, fp_visible))
+    print(f"\nDone: {len(ref)} profiles, Chrome {CHROME_BASE}.x "
+          f"(build {CHROME_VERSION}, per-profile patch), --gpu {mode} "
+          f"(pool {len(pool)} adapters)")
+    return len(ref)
 
 
 def main():

@@ -431,7 +431,7 @@ def geo_from_proxy(px):
 def next_profile_index():
     """Return the next free profile_NN.json index after generated profiles."""
     mx = 0
-    for f in os.listdir(PROFILES_DIR):
+    for f in os.listdir(paths.PROFILES_DIR):
         m = re.match(r"profile_(\d+)\.json$", f)
         if m:
             mx = max(mx, int(m.group(1)))
@@ -500,7 +500,7 @@ def apply_gpu_mode(idx, gpu_mode, host):
 
     Return True on change and warn because changing the GPU breaks identity continuity.
     """
-    path = os.path.join(PROFILES_DIR, f"profile_{idx:02d}.json")
+    path = os.path.join(paths.PROFILES_DIR, f"profile_{idx:02d}.json")
     if not os.path.exists(path):
         return False
     with open(path, "r", encoding="utf-8") as f:
@@ -544,7 +544,7 @@ def create_new_profile(gpu_mode=None):
     idx = next_profile_index()
     prof, fp_visible = gp.build_profile(ref, idx, seed=seed,
                                         gpu_mode=gpu_mode or gp.default_gpu_mode())
-    path = os.path.join(PROFILES_DIR, f"profile_{idx:02d}.json")
+    path = os.path.join(paths.PROFILES_DIR, f"profile_{idx:02d}.json")
     paths.write_json_atomic(path, prof)
     print(f"[new profile] random seed -> {os.path.basename(path)}")
     print(gp.profile_summary(path, prof, fp_visible))
@@ -552,7 +552,9 @@ def create_new_profile(gpu_mode=None):
 
 
 def load_profile(idx):
-    path = os.path.join(PROFILES_DIR, f"profile_{idx:02d}.json")
+    path = os.path.join(paths.PROFILES_DIR, f"profile_{idx:02d}.json")
+    if not os.path.exists(path):
+        gp.ensure_profiles()
     if not os.path.exists(path):
         sys.exit(f"Profile does not exist: {path} (run generate_profiles.py)")
     with open(path, "r", encoding="utf-8") as f:
@@ -863,7 +865,7 @@ def _launch_one_impl(idx, with_proxy, dry_run, chrome_exe=None, control="none",
             desktop_owner = IsolatedDesktop.create()
             proc = desktop_owner.launch(cmd, cwd=ROOT)
         elif desktop == "current":
-            proc = subprocess.Popen(cmd)
+            proc = subprocess.Popen(cmd, cwd=ROOT)
         else:
             raise ValueError("Unknown desktop mode: %s" % desktop)
     except Exception:
@@ -979,7 +981,10 @@ def main():
     # Derive a fresh profile's default GPU mode only after the host is known.
     effective_gpu = args.gpu or (gp.default_gpu_mode() if generating_fresh else None)
 
-    n = len([f for f in os.listdir(PROFILES_DIR) if f.startswith("profile_") and f.endswith(".json")])
+    if args.all or args.profile:
+        gp.ensure_profiles(gpu_mode=args.gpu, build=args.build)
+
+    n = len([f for f in os.listdir(paths.PROFILES_DIR) if f.startswith("profile_") and f.endswith(".json")])
     if args.all:
         indices = list(range(1, n + 1))
     elif args.profile:

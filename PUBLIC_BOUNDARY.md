@@ -14,7 +14,7 @@ This document defines the release boundary for Browser3. The machine-readable so
 
 - The private Chromium working tree, native masking implementation, and Chromium/Blink/V8/content/net integration changes.
 - Build infrastructure and private Chromium working-tree history.
-- Internal detector harnesses, `test_kompletni/`, baselines, screenshots, measurements, and research captures.
+- Internal detector harnesses, baselines, screenshots, measurements, and research captures.
 - Runtime profiles, Chromium user data, caches, proxy configuration, credentials, logs, signing private keys, and release evidence archives.
 - Private planning documents, prompts, CHANGELOG, and agent instructions.
 - Internal migration, compatibility, release-integrity, catalog-build, and host-coherence
