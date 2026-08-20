@@ -26,9 +26,11 @@ directory:
 python launcher.py --profile 1
 ```
 
-This is the persistence model implemented by Browser3. A public cross-session benchmark
-has not been published yet, so no detector score or universal stability result is
-claimed.
+This is the persistence model implemented by Browser3. The dated
+[public validation report](PUBLIC_VALIDATION.md) records 15/15 same-profile reload
+comparisons, 5/5 close/reopen comparisons, 5/5 new browser-process comparisons and
+five distinct profile signatures in each lifecycle phase on the stated release and
+host. These observations are not a universal detector or future-release guarantee.
 
 ## Can I run several profiles at the same time?
 
@@ -84,12 +86,14 @@ GO, and proxy or IP reputation can materially affect network-risk results.
 
 ## Is there an installer or standalone Browser3 CLI?
 
-Not currently. Extract the official Windows archive, keep `runtime\` intact, ensure
-Python 3.7 or newer is available as `python`, and start Browser3 with:
+There is no installer or standalone native CLI. The release includes a one-command
+Windows wrapper. Extract the official archive, keep `runtime\` intact, and run:
 
 ```powershell
-python launcher.py
+.\browser3
 ```
+
+Python 3.7 or newer must still be available through `py.exe -3` or `python.exe`.
 
 ## Do GitHub's automatic source archives contain a runnable browser?
 

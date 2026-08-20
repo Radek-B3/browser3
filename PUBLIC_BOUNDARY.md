@@ -4,7 +4,9 @@ This document defines the release boundary for Browser3. The machine-readable so
 
 ## Public source layer (MPL-2.0)
 
-- Python orchestration shipped to end users: launcher, runtime path handling, proxy forwarding, desktop handling, host probing, and codec preflight.
+- Python orchestration shipped to end users: launcher, loopback-only Session API,
+  runtime path handling, proxy forwarding, desktop handling, host probing, and codec
+  preflight.
 - Profile-generation policy in `generate_profiles.py`.
 - The single read-only GPU identity catalog at `resources/gpu_templates.json`.
 - User, security, support, and licensing documentation.

@@ -108,6 +108,37 @@ BROWSER3_CONTROL {"profile": 1, "control": "cdp", "cdp_url": "ws://127.0.0.1:543
 
 If `--control-output control.json` is passed, the same JSON metadata is written to the specified file.
 
+### Local Session API
+
+The release includes the optional loopback-only Session API:
+
+```powershell
+python browser3_agent.py --listen 127.0.0.1 --port 17890
+```
+
+It prints a ready JSON object and exposes `GET /v1/health`,
+`POST /v1/sessions`, `GET /v1/sessions`, and
+`DELETE /v1/sessions/{session_id}`. A minimal PowerShell start request is:
+
+```powershell
+$body = @{
+  profile = 1
+  proxy = $false
+  build = "Release"
+  control = "cdp"
+  desktop = "current"
+} | ConvertTo-Json
+
+Invoke-RestMethod -Method Post `
+  -Uri http://127.0.0.1:17890/v1/sessions `
+  -ContentType application/json `
+  -Body $body
+```
+
+The API manages Browser3 process lifecycle and profile locks. It does not perform page
+automation; connect Playwright, Puppeteer, or another client to the returned loopback
+`cdp_url`.
+
 ### Playwright Integration (Node.js)
 
 Connect over CDP using `playwright-core`:
