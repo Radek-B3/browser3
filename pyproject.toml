@@ -9,7 +9,7 @@ description = "Signed Browser3 runtime installer and launcher for Windows x64"
 readme = "README_PYPI.md"
 requires-python = ">=3.10"
 license = "MPL-2.0"
-license-files = ["release/public/LICENSE"]
+license-files = ["LICENSE", "release/public/LICENSE"]
 authors = [{name = "Browser3 contributors"}]
 dependencies = ["cryptography>=41,<47"]
 classifiers = [

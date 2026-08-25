@@ -1,5 +1,6 @@
 include README_PYPI.md
 include pyproject.toml
+include LICENSE
 include release/public/LICENSE
 recursive-include browser3 *.py *.asc
 prune tests
