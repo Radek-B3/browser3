@@ -1,0 +1,16 @@
+Browser3 is a dual-use browser orchestration package.
+
+This npm package provides a small command-line bridge to the Browser3 Python client.
+Browser3 is a Chromium-based multi-profile browser with native fingerprint-masking
+capabilities. Its intended legitimate uses include privacy research, browser and web
+application compatibility testing, reproducible multi-profile quality assurance, and
+authorized browser automation by people and AI agents.
+
+The npm package does not contain Chromium, fingerprint-masking code, a downloader, or
+credential-handling logic. It delegates to an explicitly installed Python client, which
+downloads only a version-pinned Browser3 release and verifies its signature and hash.
+
+Users are responsible for complying with applicable law, website terms, authorization
+requirements, and the Browser3 acceptable-use terms. The package is not intended for
+unauthorized access, fraud, credential theft, malware delivery, or evasion of security
+controls.

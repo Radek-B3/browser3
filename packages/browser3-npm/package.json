@@ -1,0 +1,41 @@
+{
+  "name": "browser3",
+  "version": "0.1.0",
+  "description": "Node.js command wrapper for the Browser3 Python runtime client",
+  "type": "module",
+  "private": false,
+  "license": "MPL-2.0",
+  "contentPolicy": {
+    "class": "dual-use"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Radek-B3/browser3.git",
+    "directory": "packages/browser3-npm"
+  },
+  "homepage": "https://github.com/Radek-B3/browser3#readme",
+  "bugs": {
+    "url": "https://github.com/Radek-B3/browser3/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "bin": {
+    "browser3": "bin/browser3.js"
+  },
+  "files": [
+    "DISCLOSURE",
+    "LICENSE",
+    "bin",
+    "lib",
+    "README.md",
+    "package.json"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "pack:check": "npm pack --dry-run"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

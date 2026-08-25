@@ -1,0 +1,62 @@
+name: Stage npm package
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Exact browser3 npm version to stage (for example 0.1.1)"
+        required: true
+        type: string
+      confirmation:
+        description: "Type stage-browser3 to confirm the registry staging operation"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  stage:
+    name: Test and stage npm package with OIDC
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      id-token: write
+      contents: read
+    defaults:
+      run:
+        working-directory: packages/browser3-npm
+    steps:
+      - name: Check out the approved source
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js with npm OIDC support
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+          package-manager-cache: false
+
+      - name: Install npm CLI with staged publishing support
+        run: npm install --global npm@11.15.0
+
+      - name: Verify explicit version, confirmation, and npm version
+        env:
+          EXPECTED_VERSION: ${{ inputs.version }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          NPM_VERSION="$(npm --version)"
+          node -e "const p=require('./package.json');
+          const [major,minor,patch]=process.argv[1].split('.').map(Number);
+          if(process.env.CONFIRMATION!=='stage-browser3') throw new Error('invalid confirmation');
+          if(process.env.EXPECTED_VERSION!==p.version) throw new Error('input version does not match package.json');
+          if(major<11||(major===11&&(minor<15||(minor===15&&patch<0)))) throw new Error('npm 11.15.0 or newer is required for staged publishing')" "$NPM_VERSION"
+
+      - name: Test npm wrapper
+        run: npm test
+
+      - name: Inspect publish file set
+        run: npm pack --dry-run
+
+      - name: Stage dual-use package with npm OIDC
+        run: npm stage publish --access public

@@ -1,0 +1,7 @@
+include README_PYPI.md
+include pyproject.toml
+include release/public/LICENSE
+recursive-include browser3 *.py *.asc
+prune tests
+exclude tests/*
+global-exclude __pycache__/* *.py[cod]

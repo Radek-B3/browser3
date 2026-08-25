@@ -9,5 +9,5 @@ proxy.txt
 *.zip
 *.sha256
 !SOURCE_MANIFEST.sha256
-Browser3-*/
+/Browser3-*/
 release-candidate/
