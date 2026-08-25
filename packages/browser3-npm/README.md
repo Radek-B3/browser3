@@ -8,7 +8,7 @@ Install the Python client first on supported Windows x64:
 
 ```powershell
 python -m pip install browser3
-npm install browser3
+npm install --global @radek-b3/browser3
 browser3 install
 browser3 launch --profile 1
 ```

@@ -1,5 +1,5 @@
 {
-  "name": "browser3",
+  "name": "@radek-b3/browser3",
   "version": "0.1.0",
   "description": "Node.js command wrapper for the Browser3 Python runtime client",
   "type": "module",

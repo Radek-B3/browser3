@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import { discoverPython } from "../lib/python.js";
 import { main } from "../lib/cli.js";
@@ -12,6 +13,15 @@ function output() {
     get text() { return text; },
   };
 }
+
+test("package uses the owner-scoped public npm identity", () => {
+  const packageJson = JSON.parse(
+    readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+  );
+  assert.equal(packageJson.name, "@radek-b3/browser3");
+  assert.equal(packageJson.bin.browser3, "bin/browser3.js");
+  assert.equal(packageJson.publishConfig.access, "public");
+});
 
 test("discovery prefers py 3.13 and requires the Python client", () => {
   const calls = [];
