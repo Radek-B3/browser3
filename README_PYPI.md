@@ -28,5 +28,6 @@ modules) to be installed. It never allows an unverified custom directory to supp
 the launcher or profile-management code. Accordingly, `browser3 doctor` reports an
 override-only state as unhealthy until that verified runtime root is present.
 
-The Browser3 name/PyPI publication remains owner-controlled; building this wheel or
-source distribution does not publish it.
+Version `browser3==0.1.0` is published on PyPI. Building this wheel or source
+distribution locally does not publish a new version; every future registry publication
+remains owner-controlled.

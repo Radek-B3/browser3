@@ -25,16 +25,16 @@ Runtime installation, OpenPGP/SHA-256 verification, version pinning,
 implemented only by the Python client. Use `browser3 update <version>` for an
 explicit runtime change; an npm invocation does not silently upgrade Chromium.
 
-The package is Windows x64 only, matching the first supported Python
-distribution. No publication is performed by this repository's tests or pack
-checks. Browser3 remains a multi-profile antidetect Chromium browser for people
-and AI agents; its primary differentiator is persistent, internally consistent
-browser identities. It does not guarantee bypass of any anti-bot or
+The package is Windows x64 only, matching the first supported Python distribution.
+Version `@radek-b3/browser3@0.1.0` is published on npm; repository tests and pack checks
+do not publish future versions. Browser3 remains a multi-profile antidetect Chromium
+browser for people and AI agents; its primary differentiator is persistent, internally
+consistent browser identities. It does not guarantee bypass of any anti-bot or
 fingerprinting system.
 
 License: MPL-2.0. See the repository public license for the complete text.
 
 Browser3 is declared as dual-use software under the npm Dual-Use Content Policy. See
-the `DISCLOSURE` file included in the package. The first npm release requires an
-interactive, 2FA-protected publish; later GitHub OIDC releases are staged and require
-separate maintainer approval with 2FA before becoming public.
+the `DISCLOSURE` file included in the package. The first npm release was published
+interactively with 2FA; later GitHub OIDC releases are staged and require separate
+maintainer approval with 2FA before becoming public.

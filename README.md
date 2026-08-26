@@ -54,6 +54,19 @@ external-service scope remain in the dated [PUBLIC_VALIDATION.md](PUBLIC_VALIDAT
 
 ## Quick start
 
+### Python client (Windows x64, Python 3.10+)
+
+```powershell
+python -m pip install browser3==0.1.0
+browser3 install
+browser3 launch --profile 1
+```
+
+The optional `@radek-b3/browser3@0.1.0` npm package is a thin wrapper around this
+Python client; it is not a separate npm-only runtime.
+
+### Direct release ZIP (Windows x64, Python 3.7+)
+
 Download `Browser3-<version>-windows-x64.zip` from the [latest official release](https://github.com/Radek-B3/browser3/releases/latest). GitHub's automatically generated `Source code (zip)` and `Source code (tar.gz)` archives are not Browser3 installers. The signed public-source snapshot is `Browser3-public-source-<version>.zip`.
 
 Extract the complete archive, keep `runtime\` intact, open PowerShell or Command Prompt in the extracted directory, and run:
@@ -132,7 +145,11 @@ Python handles orchestration and policy; fingerprint handling remains inside Chr
 | Graphics | A physical GPU with working hardware acceleration |
 | Display scaling | Any Windows scaling level; 125% and 150% are supported |
 
-- No installer or standalone Browser3 CLI is claimed today.
+- No MSI/GUI installer or standalone single-file executable is claimed today. The
+  supported paths are the version-pinned Python client or the verified release ZIP;
+  the npm package delegates to the Python client.
+- The PyPI client requires Python 3.10 or newer; the direct release ZIP wrapper supports
+  Python 3.7 or newer.
 - Profiles are generated for the current machine. Moving them to different hardware is unsupported because hardware claims may no longer match.
 - Browser3 PE files are not Authenticode-signed. Verify the signed checksum manifest; do not disable SmartScreen or antivirus protection.
 - Widevine is not included. DRM-protected streaming services may not work, and Windows N/KN may require the Microsoft Media Feature Pack for H.264/AAC playback.
@@ -143,6 +160,7 @@ Python handles orchestration and policy; fingerprint handling remains inside Chr
 
 ## Documentation
 
+- [Why AI Agents Need Persistent Browser Identities](WHY_AI_AGENTS_NEED_PERSISTENT_BROWSER_IDENTITIES.md)
 - [CLI & automation reference](USAGE.md)
 - [Frequently asked questions](FAQ.md)
 - [Release notes](RELEASE_NOTES.md)
