@@ -13,6 +13,9 @@
 - Opt-in CDP launch is available through `--control cdp`. The release also includes
   the loopback-only `browser3_agent.py` Session API for supported Playwright,
   Puppeteer and custom automation clients.
+- A minimal, self-contained `examples/puppeteer` directory documents a clean
+  `npm ci` setup for the pinned `puppeteer-core@25.3.0` client. It attaches to a
+  Session API endpoint and never launches a second Chromium.
 - Default launches remain headful and CDP-free. Fingerprint masking remains native to
   the packaged Chromium layer; automation clients do not inject masking hooks.
 - The MPL-2.0 public source snapshot is generated from an explicit allowlist. The

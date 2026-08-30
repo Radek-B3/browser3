@@ -1,0 +1,13 @@
+{
+  "name": "browser3-puppeteer-example",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Minimal Puppeteer connection example for the Browser3 Session API",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "dependencies": {
+    "puppeteer-core": "25.3.0"
+  }
+}

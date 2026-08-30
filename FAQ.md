@@ -44,13 +44,21 @@ Yes. An agent or script can select an existing profile with `--profile` (or via 
 Session API). Reopening the profile reuses the same deterministic identity configuration,
 user data directory, and persistent cookies across runs.
 
-## Does Browser3 support Playwright or CDP?
+## Does Browser3 support Playwright, Puppeteer or CDP?
 
 Yes. Browser3 supports Playwright, Puppeteer, and raw CDP automation via an opt-in control
 path (`--control cdp` or the local Session API). Default launches keep CDP disabled so
 normal sessions remain completely CDP-free. When enabled, automation connects to a loopback
 CDP endpoint while preserving persistent profile identities and OS-level file locks without
 injecting JavaScript hooks.
+
+The release includes a minimal [`puppeteer-core@25.3.0` example](examples/puppeteer/README.md).
+It attaches to the endpoint returned by the Session API; it does not launch a second
+Chromium, choose a user-data directory, or own profile cleanup.
+
+Because an active client may enable the CDP Runtime domain, detector tooling can report
+Developer Tools. An open endpoint without a client and a Puppeteer attach are separate
+operating modes. Browser3 does not claim that either automation mode is undetectable.
 
 ## Where are profiles, cookies and settings stored?
 

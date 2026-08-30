@@ -173,6 +173,31 @@ with sync_playwright() as playwright:
     print(page.title())
 ```
 
+### Puppeteer Integration (Node.js)
+
+The release contains a self-contained example in
+[`examples/puppeteer`](examples/puppeteer/README.md). From the extracted release
+directory, start the Session API in one terminal and install only the pinned Node.js
+client in another:
+
+```powershell
+python browser3_agent.py --listen 127.0.0.1 --port 17890
+cd examples\puppeteer
+npm ci
+node puppeteer.mjs --profile 1
+```
+
+The example uses `puppeteer-core@25.3.0`, connects with `puppeteer.connect()` and
+defaults to `https://example.com`. It does not call `puppeteer.launch()`, pass a
+Chromium executable, select a user-data directory, or inject page scripts. The Session
+API remains responsible for the Browser3 process and profile lock; the example always
+disconnects the client and requests session cleanup.
+
+An active Puppeteer connection can enable the CDP Runtime domain. Detector tooling may
+therefore report a Developer Tools signal. This is a documented automation-side
+observation, not a masking failure or a universal anti-bot verdict. Native fingerprint
+masking remains in the packaged Chromium layer.
+
 ### Automation Invariants & Guarantees:
 - **Zero Injected JS Hooks:** No Proxy objects, runtime scripts, or `Page.addScriptToEvaluateOnNewDocument` hooks are used for fingerprinting. All masking is in native C++.
 - **Loopback Only:** CDP endpoints bind exclusively to `127.0.0.1` on a dynamically assigned non-zero port.

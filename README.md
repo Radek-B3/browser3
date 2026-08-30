@@ -108,6 +108,11 @@ The launcher provides scriptable profile selection, profile locking, optional st
 
 See the [CLI & automation reference](USAGE.md) for implemented controls and their current status.
 
+The release includes a minimal [Puppeteer example](examples/puppeteer/README.md).
+It installs `puppeteer-core@25.3.0` in its own directory and attaches to the
+loopback endpoint returned by the Session API. Puppeteer is a client only: Browser3
+owns Chromium startup, profile selection, the persistent profile lock and cleanup.
+
 ## Benchmarks
 
 A sanitized five-profile validation report is included in this source layer. On Browser3
