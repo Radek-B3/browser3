@@ -113,6 +113,12 @@ It installs `puppeteer-core@25.3.0` in its own directory and attaches to the
 loopback endpoint returned by the Session API. Puppeteer is a client only: Browser3
 owns Chromium startup, profile selection, the persistent profile lock and cleanup.
 
+The release also includes a local [MCP stdio adapter](mcp/README.md). It exposes
+the existing Session API to standard MCP clients without opening a network listener;
+the adapter does not implement page actions or fingerprint masking. Install its
+pinned `@modelcontextprotocol/sdk@1.30.0` with `npm ci` in `mcp/` and keep the
+`browser3-agent` process on `127.0.0.1`.
+
 ## Benchmarks
 
 A sanitized five-profile validation report is included in this source layer. On Browser3

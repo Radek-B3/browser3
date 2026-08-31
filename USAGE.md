@@ -139,6 +139,38 @@ The API manages Browser3 process lifecycle and profile locks. It does not perfor
 automation; connect Playwright, Puppeteer, or another client to the returned loopback
 `cdp_url`.
 
+### Local MCP adapter
+
+The release includes a minimal local MCP transport in `mcp/`. It is pinned to the
+official `@modelcontextprotocol/sdk@1.30.0` and MCP revision `2025-11-25`. The adapter
+uses only `stdio`; it does not listen on HTTP, SSE, Streamable HTTP or any other
+network endpoint.
+
+In one terminal, keep the Session API running:
+
+```powershell
+python browser3_agent.py --listen 127.0.0.1 --port 17890
+```
+
+In another terminal, install the exact MCP dependency and run the discovery example:
+
+```powershell
+cd mcp
+npm ci
+node browser3_mcp_client.mjs
+```
+
+Configure a standard MCP host to spawn `node mcp\browser3_mcp.mjs` with `mcp` as its
+working directory. `BROWSER3_AGENT_URL`, if set, must remain
+`http://127.0.0.1:<port>`. The adapter exposes health, status, start, reconnect and
+stop tools for profiles 1–5. Start/stop and issuing a CDP URL require explicit
+`confirm=true`; enabling proxy additionally requires `allow_proxy=true`.
+
+The MCP adapter is a transport layer, not WebMCP: WebMCP is a separate page-to-agent
+contract and is not enabled by this release. Page actions remain the responsibility
+of a client attached to the returned CDP endpoint. Fingerprint masking remains native
+to the Browser3 Chromium runtime and is never implemented by this adapter.
+
 ### Playwright Integration (Node.js)
 
 Connect over CDP using `playwright-core`:

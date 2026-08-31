@@ -91,10 +91,10 @@ index 447e272..1a19b58 100644
      (is_win && ffmpeg_branding == "Chrome") ||
      (use_linux_config && ffmpeg_branding == "Chrome")) {
    ffmpeg_c_sources += [
-+    # H.264 dekodér i parser odstraněny (L2 — implementaci nedistribuujeme,
-+    # dekóduje D3D11/Media Foundation). Stejný tvar jako HEVC, který Chromium
-+    # nikdy nenese. Ponechán startcode.c (volá ho utils.c) a videodsp/fpel,
-+    # které H.264-specifické nejsou. Viz docs/PLAN_KODEKY_L2.md K8.
++    # The H.264 decoder and parser are removed from the distributed build.
++    # H.264 decoding is delegated to D3D11/Media Foundation. This mirrors the
++    # HEVC configuration, which Chromium never carries. Keep startcode.c
++    # (called by utils.c) and videodsp/fpel because they are not H.264-specific.
      "libavcodec/atsc_a53.c",
      "libavcodec/autorename_libavcodec_videodsp.c",
 -    "libavcodec/cabac.c",
@@ -132,7 +132,7 @@ index 447e272..1a19b58 100644
 -    "libavcodec/x86/autorename_libavcodec_x86_aacpsdsp_init.c",
 -    "libavcodec/x86/autorename_libavcodec_x86_h264dsp_init.c",
 -    "libavcodec/x86/autorename_libavcodec_x86_sbrdsp_init.c",
-+    # aacpsdsp_init / sbrdsp_init odstraněny s AAC dekodérem (viz níže).
++    # aacpsdsp_init / sbrdsp_init are removed together with the AAC decoder.
      "libavcodec/x86/autorename_libavcodec_x86_videodsp_init.c",
 -    "libavcodec/x86/h264_intrapred_init.c",
 -    "libavcodec/x86/h264_qpel.c",
@@ -141,7 +141,7 @@ index 447e272..1a19b58 100644
    ffmpeg_asm_sources += [
 -    "libavcodec/x86/aacpsdsp.asm",
 -    "libavcodec/x86/autorename_libavcodec_x86_sbrdsp.asm",
-+    # aacpsdsp.asm / sbrdsp.asm odstraněny s AAC dekodérem.
++    # aacpsdsp.asm / sbrdsp.asm are removed together with the AAC decoder.
      "libavcodec/x86/autorename_libavcodec_x86_videodsp.asm",
      "libavcodec/x86/fpel.asm",
 -    "libavcodec/x86/h264_chromamc.asm",
@@ -171,13 +171,13 @@ index 447e272..1a19b58 100644
 -    "libavcodec/aac/aacdec_tab.c",
 -    "libavcodec/aac/aacdec_usac.c",
 -    "libavcodec/aac/aacdec_usac_mps212.c",
-+    # L2 (docs/D1_AVC_AAC_ROZHODNUTI.md): AAC dekodér se nekompiluje — AAC
-+    # dekóduje Media Foundation. Odstraněno oproti autogenerovanému configu:
++    # The distributed build does not compile an AAC decoder; AAC decoding is
++    # delegated to Media Foundation. The generated configuration omits:
 +    #   aac/aacdec*.c, aacps*.c, aacpsdsp_float.c, aacsbr.c, aactab.c,
 +    #   cbrt_data.c, cbrt_tablegen_common.c, sbrdsp.c
-+    # Zůstává aac_ac3_parser.c + aac_parser.c + adts_header.c (CONFIG_AAC_PARSER
-+    # a CONFIG_AAC_DEMUXER jsou dál 1 — demuxovat AAC musíme), a kbdwin.c
-+    # + sinewin.c, což jsou generické okenní funkce sdílené s dalšími kodeky.
++    # aac_ac3_parser.c, aac_parser.c, and adts_header.c remain because the AAC
++    # parser and demuxer stay enabled, while kbdwin.c and sinewin.c are generic
++    # window functions shared with other codecs.
      "libavcodec/aac_ac3_parser.c",
      "libavcodec/aac_parser.c",
 -    "libavcodec/aacps_common.c",

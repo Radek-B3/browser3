@@ -16,6 +16,9 @@
 - A minimal, self-contained `examples/puppeteer` directory documents a clean
   `npm ci` setup for the pinned `puppeteer-core@25.3.0` client. It attaches to a
   Session API endpoint and never launches a second Chromium.
+- The local `mcp/` adapter uses stdio and the pinned official
+  `@modelcontextprotocol/sdk@1.30.0` for MCP `2025-11-25`; it delegates session
+  lifecycle to `browser3-agent` and does not open a network listener.
 - Default launches remain headful and CDP-free. Fingerprint masking remains native to
   the packaged Chromium layer; automation clients do not inject masking hooks.
 - The MPL-2.0 public source snapshot is generated from an explicit allowlist. The

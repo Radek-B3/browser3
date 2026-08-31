@@ -1,0 +1,18 @@
+{
+  "name": "@radek-b3/browser3-mcp-example",
+  "version": "0.1.0",
+  "description": "Local Browser3 MCP stdio adapter and example client",
+  "private": true,
+  "type": "module",
+  "license": "MPL-2.0",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.30.0"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "test:release": "node test/validate_mcp_release.mjs"
+  }
+}
