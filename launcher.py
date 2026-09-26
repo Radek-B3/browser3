@@ -21,6 +21,7 @@ Examples:
   python launcher.py --all
   python launcher.py --profile 1 --dry-run
   python launcher.py --profile 1 --build Dev
+  python launcher.py --profile 1 --browser3-masking=off
 
 `Release` is the production and validation build. `Release2` is available for A/B
 comparisons, and `Dev` is an iteration-only component build. `FP_CHROME_EXE`
@@ -41,7 +42,7 @@ import time
 import urllib.request
 
 import browser3_paths as paths
-from proxy_forwarder import ForwarderConfig, ProxyForwarder
+from proxy_forwarder import ForwarderConfig, ProxyForwarder, Socks5ToHttpForwarder
 from socks5_forwarder import Socks5Config, Socks5Forwarder, socks5_open_connect
 from generate_profiles import FONT_BUNDLES  # source of truth for locale-aware fonts
 import generate_profiles as gp  # fresh profile generation without a profile number
@@ -62,6 +63,15 @@ DEFAULT_BUILD = "Release"
 CONTROL_MODES = ("none", "cdp")
 DESKTOP_MODES = ("current", "isolated")
 DEVTOOLS_ACTIVE_PORT = "DevToolsActivePort"
+BROWSER3_MASKING_SWITCHES = (
+    "browser3-masking",
+    "browser3-mask-media",
+    "browser3-mask-webrtc",
+    "browser3-mask-audio",
+    "browser3-mask-blink",
+    "browser3-mask-navigation",
+    "browser3-mask-child-process",
+)
 
 
 class ProfileInUseError(RuntimeError):
@@ -554,7 +564,7 @@ def create_new_profile(gpu_mode=None):
 def load_profile(idx):
     path = os.path.join(paths.PROFILES_DIR, f"profile_{idx:02d}.json")
     if not os.path.exists(path):
-        gp.ensure_profiles()
+        gp.ensure_profile(idx)
     if not os.path.exists(path):
         sys.exit(f"Profile does not exist: {path} (run generate_profiles.py)")
     with open(path, "r", encoding="utf-8") as f:
@@ -756,7 +766,7 @@ def write_control_info(path, info):
 
 
 def build_cmdline(profile, config_path, proxy_arg, chrome_exe=None, control="none",
-                  cdp_port=None):
+                  cdp_port=None, browser3_masking_flags=None):
     cmd = [chrome_exe or CHROME_EXE,
            f'--user-data-dir={profile["user_data_dir"]}',
            f'--fp-profile-config={config_path}']
@@ -769,17 +779,47 @@ def build_cmdline(profile, config_path, proxy_arg, chrome_exe=None, control="non
     cmd += control_flags(control, cdp_port=cdp_port)
 
     # Load optional environment flags, for example extension-test switches.
+    extra_flags = []
     extra_flags_env = os.environ.get("FP_LAUNCHER_EXTRA_FLAGS")
     if extra_flags_env:
         import shlex
-        cmd.extend(shlex.split(extra_flags_env, posix=(os.name != "nt")))
+        parsed_extra_flags = shlex.split(extra_flags_env, posix=(os.name != "nt"))
+        explicit_switches = set((browser3_masking_flags or {}).keys())
+        index = 0
+        while index < len(parsed_extra_flags):
+            arg = parsed_extra_flags[index]
+            if arg.startswith("--"):
+                switch_name = arg[2:].split("=", 1)[0]
+                if switch_name in explicit_switches:
+                    # Also consume a separate on/off value if a caller used
+                    # `--switch off` instead of Chromium's normal `--switch=off`.
+                    if ("=" not in arg and index + 1 < len(parsed_extra_flags) and
+                            parsed_extra_flags[index + 1] in ("on", "off")):
+                        index += 1
+                    index += 1
+                    continue
+            extra_flags.append(arg)
+            index += 1
+
+    # Explicit launcher options are kept as native Chromium switches and take
+    # precedence over duplicate FP_LAUNCHER_EXTRA_FLAGS entries. This Python
+    # layer selects no masking policy of its own; C++ applies these switches.
+    for switch_name in BROWSER3_MASKING_SWITCHES:
+        value = (browser3_masking_flags or {}).get(switch_name)
+        if value is not None:
+            if value not in ("on", "off"):
+                raise ValueError("%s must be 'on' or 'off'" % switch_name)
+            cmd.append("--%s=%s" % (switch_name, value))
+    # Keep environment-supplied positional arguments (e.g. a test URL) after
+    # Chromium switches, and retain all non-conflicting legacy flags.
+    cmd.extend(extra_flags)
 
     return cmd
 
 
 def _launch_one_impl(idx, with_proxy, dry_run, chrome_exe=None, control="none",
                      cdp_timeout=30.0, control_output=None, profile_lock=None,
-                     desktop="current"):
+                     desktop="current", browser3_masking_flags=None):
     """chrome_exe=None → packaged runtime or out/Release, see chrome_exe_path()."""
     exe = chrome_exe or CHROME_EXE
     profile, path = load_profile(idx)
@@ -812,12 +852,14 @@ def _launch_one_impl(idx, with_proxy, dry_run, chrome_exe=None, control="none",
                 proxy_arg = f'socks5://127.0.0.1:{fwd.port}'
                 print(f"[profile {idx}] SOCKS5 forwarder 127.0.0.1:{fwd.port} -> {px['host']}:{px['port']} (auth)")
             elif px["user"]:
-                # Authenticated HTTP upstream through a local CONNECT forwarder; TLS stays intact.
-                fwd = ProxyForwarder(ForwarderConfig(px["host"], px["port"], px["user"], px["pass"]))
+                # Autentizované HTTP proxy zpřístupní Chromiu lokální SOCKS5;
+                # adaptér ověří CONNECT a neukončuje TLS.
+                fwd = Socks5ToHttpForwarder(
+                    ForwarderConfig(px["host"], px["port"], px["user"], px["pass"]))
                 fwd.start()
                 forwarder = fwd
-                proxy_arg = f'http://127.0.0.1:{fwd.port}'
-                print(f"[profile {idx}] forwarder 127.0.0.1:{fwd.port} -> {px['host']}:{px['port']} (auth)")
+                proxy_arg = f'socks5://127.0.0.1:{fwd.port}'
+                print(f"[profile {idx}] SOCKS5 forwarder 127.0.0.1:{fwd.port} -> {px['host']}:{px['port']} (auth HTTP)")
             else:
                 proxy_arg = f'http://{px["host"]}:{px["port"]}'
 
@@ -831,7 +873,8 @@ def _launch_one_impl(idx, with_proxy, dry_run, chrome_exe=None, control="none",
 
     cdp_port = pick_loopback_port() if control == "cdp" else None
     cmd = build_cmdline(profile, path, proxy_arg, exe, control=control,
-                        cdp_port=cdp_port)
+                        cdp_port=cdp_port,
+                        browser3_masking_flags=browser3_masking_flags)
     print(f"[profile {idx}] cmd:\n  " + " ".join(f'"{c}"' if " " in c else c for c in cmd))
 
     if dry_run:
@@ -909,18 +952,21 @@ def _launch_one_impl(idx, with_proxy, dry_run, chrome_exe=None, control="none",
 
 
 def launch_one(idx, with_proxy, dry_run, chrome_exe=None, control="none",
-               cdp_timeout=30.0, control_output=None, desktop="current"):
+               cdp_timeout=30.0, control_output=None, desktop="current",
+               browser3_masking_flags=None):
     """Acquire the profile lock before runtime mutation or forwarder startup."""
     if dry_run:
         return _launch_one_impl(idx, with_proxy, True, chrome_exe, control,
                                 cdp_timeout, control_output, profile_lock=None,
-                                desktop=desktop)
+                                desktop=desktop,
+                                browser3_masking_flags=browser3_masking_flags)
     profile, _path = load_profile(idx)
     profile_lock = ProfileLock(profile["user_data_dir"]).acquire()
     try:
         result = _launch_one_impl(idx, with_proxy, False, chrome_exe, control,
                                   cdp_timeout, control_output, profile_lock=profile_lock,
-                                  desktop=desktop)
+                                  desktop=desktop,
+                                  browser3_masking_flags=browser3_masking_flags)
         if result is None:
             profile_lock.release()
         return result
@@ -929,10 +975,20 @@ def launch_one(idx, with_proxy, dry_run, chrome_exe=None, control="none",
         raise
 
 
-def main():
-    paths.initialize_runtime_state()
+def positive_profile_index(value):
+    """Načte index profilu od jedné a předem odmítne nulu i záporné hodnoty."""
+    try:
+        index = int(value)
+    except (TypeError, ValueError):
+        raise argparse.ArgumentTypeError("Index profilu musí být kladné celé číslo.")
+    if index < 1:
+        raise argparse.ArgumentTypeError("Index profilu musí být kladné celé číslo.")
+    return index
+
+
+def build_argument_parser():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--profile", type=int, help="profile index (1..N)")
+    ap.add_argument("--profile", type=positive_profile_index, help="profile index (1..N)")
     ap.add_argument("--all", action="store_true", help="start every generated profile")
     ap.add_argument("--with-proxy", action="store_true",
                     help="force the sticky proxy assignment (default when proxy.txt is not empty)")
@@ -954,7 +1010,25 @@ def main():
                          "architecture), common (common discrete adapters), or all. Existing "
                          f"profiles are unchanged when omitted; new profiles default to "
                          f"'{gp.DEFAULT_GPU_MODE}' ('family' on weak/integrated graphics).")
-    args = ap.parse_args()
+    for switch_name in BROWSER3_MASKING_SWITCHES:
+        ap.add_argument("--" + switch_name, choices=("on", "off"), default=None,
+                        metavar="{on,off}",
+                        help="diagnostic native masking policy for %s" % switch_name)
+    return ap
+
+
+def browser3_masking_flags_from_args(args):
+    return {
+        switch_name: getattr(args, switch_name.replace("-", "_"))
+        for switch_name in BROWSER3_MASKING_SWITCHES
+        if getattr(args, switch_name.replace("-", "_")) is not None
+    }
+
+
+def main():
+    paths.initialize_runtime_state()
+    args = build_argument_parser().parse_args()
+    browser3_masking_flags = browser3_masking_flags_from_args(args)
 
     # A non-empty proxy.txt enables proxies by default. Explicit --no-proxy prevents
     # accidentally changing a profile's GeoIP; --with-proxy remains for compatibility.
@@ -981,8 +1055,10 @@ def main():
     # Derive a fresh profile's default GPU mode only after the host is known.
     effective_gpu = args.gpu or (gp.default_gpu_mode() if generating_fresh else None)
 
-    if args.all or args.profile:
+    if args.all:
         gp.ensure_profiles(gpu_mode=args.gpu, build=args.build)
+    elif args.profile:
+        gp.ensure_profile(args.profile, gpu_mode=args.gpu, build=args.build)
 
     n = len([f for f in os.listdir(paths.PROFILES_DIR) if f.startswith("profile_") and f.endswith(".json")])
     if args.all:
@@ -1005,7 +1081,8 @@ def main():
             r = launch_one(i, use_proxy, args.dry_run, exe, control=args.control,
                            cdp_timeout=args.cdp_timeout,
                            control_output=args.control_output,
-                           desktop=args.desktop)
+                           desktop=args.desktop,
+                           browser3_masking_flags=browser3_masking_flags)
             if r:
                 running.append(r)
 

@@ -1034,9 +1034,9 @@ def host_report():
             f"probe {h.get('probed_at')} ({h.get('build')})")
 
 
-def build_profile(ref, idx, seed=None, gpu_mode=None):
+def build_profile(ref, idx, seed=None, gpu_mode=None, build=None):
     """Build one validated profile without writing it to disk."""
-    preflight()   # Host DPR, adapter, and Windows-version assumptions.
+    preflight(build=build)   # Host DPR, adapter, and Windows-version assumptions.
     prof = make_profile(ref, idx, seed=seed, gpu_mode=gpu_mode)
     # At least one voice bundle must remain visible.
     _hidden_voices = prof["speech"]["hidden_voices"]
@@ -1122,6 +1122,35 @@ def ensure_profiles(gpu_mode=None, build=None):
           f"(build {CHROME_VERSION}, per-profile patch), --gpu {mode} "
           f"(pool {len(pool)} adapters)")
     return len(ref)
+
+
+def ensure_profile(idx, gpu_mode=None, build=None):
+    """Deterministicky vytvoří chybějící profil a zachová uložené identity."""
+    if not isinstance(idx, int) or isinstance(idx, bool) or idx < 1:
+        raise ValueError("Index profilu musí být kladné celé číslo.")
+    paths.initialize_runtime_state()
+    os.makedirs(paths.PROFILES_DIR, exist_ok=True)
+    path = os.path.join(paths.PROFILES_DIR, f"profile_{idx:02d}.json")
+    # Zamkne první vytvoření identity proti souběžným spuštěním launcheru.
+    with paths.file_lock(path):
+        if os.path.isfile(path):
+            return path
+        _assert_no_core_in_bundles()
+        with open(os.path.join(ROOT, "profiles.json"), "r", encoding="utf-8") as f:
+            refs = json.load(f)
+        if not refs:
+            raise ValueError("profiles.json neobsahuje žádné referenční profily.")
+        ref = refs[(idx - 1) % len(refs)]
+        seed = ref["base_profile_id"]
+        if idx > len(refs):
+            # Další identity mají stabilní seed odlišný od referenční sady.
+            seed = hashlib.sha256(f"{seed}:browser3-profile:{idx}".encode("utf-8")).hexdigest()
+        mode = gpu_mode or default_gpu_mode()
+        prof, fp_visible = build_profile(ref, idx, seed=seed, gpu_mode=mode, build=build)
+        paths.write_json_atomic(path, prof)
+        print("[profiles] generated missing requested profile")
+        print(profile_summary(path, prof, fp_visible))
+    return path
 
 
 def main():
